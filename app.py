@@ -266,7 +266,15 @@ def create_password():
 
 @app.route('/autoupdate/', methods=['POST'])
 def autoupdate():
-    print request.form
+    github_signature = request.headers.get('X-Hub-Signature')
+    secret = get_setting('github_auto_update_secret')
+    import hmac
+    from hashlib import sha1
+    print request.get_json()
+    print secret
+    hmac_object = hmac.new(str(secret), request.data, digestmod=sha1)
+    if hmac.compare_digest(str(github_signature), 'sha1='+hmac_object.hexdigest()):
+        os.system('python autodeploy.py &')
     return Response('')
         
 @app.route('/incoming_email/', methods=['POST'])
