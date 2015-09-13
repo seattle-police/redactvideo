@@ -20,8 +20,17 @@ import os,sys
 
 def get_setting(setting):
     return db.table('settings').get(setting).run(conn)['value']       
-s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
-bucket = s3conn.get_bucket(get_setting('bucket_name'))
+
+# Need to wait for RethinkDB to be running
+# in rc.local there's no wait between starting rethinkdb and
+# starting this script
+while True:
+    try:
+        s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
+        bucket = s3conn.get_bucket(get_setting('bucket_name'))
+        break
+    except:
+        pass
 
 from upload import upload_to_youtube
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
