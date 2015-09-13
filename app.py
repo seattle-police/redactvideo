@@ -267,6 +267,7 @@ def create_password():
 @app.route('/autoupdate/', methods=['POST'])
 def autoupdate():
     print request.form
+    return Response('')
         
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
