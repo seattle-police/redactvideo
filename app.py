@@ -263,7 +263,11 @@ def create_password():
         return redirect('/')
     else:
         return redirect('/create_password/')
-    
+
+@app.route('/autoupdate/', methods=['POST'])
+def autoupdate():
+    print request.form
+        
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
     print request.form

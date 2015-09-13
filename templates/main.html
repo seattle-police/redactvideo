@@ -153,7 +153,14 @@ width:150px;
             
     
     <h3>Copy videos from evidence.com to RedactVideo</h3>
+    <h4>Just copy over to RedactVideo</h4>
+    <p><strong>Send anonymous download link to:</strong> </p>
+    <h4>Upload as is to Youtube</h4>
+    <p>For situations where you want to post unredacted videos on Youtube or
+    want to do the redaction on Evidence.com but post on Youtube.</p>
+    <p><strong>Send anonymous download link to:</strong> </p>
     <h3>Connect RedactVideo to your own Amazon S3 bucket</h3>
+    
     <h3>Copy a video from a url</h3>
     <p>Currently Youtube and Dropbox urls are supported.</p>
     </div>
@@ -222,6 +229,12 @@ response_type=token" target="_blank">Click here</a> to authenticate with Youtube
       <table class="form">
       <tr><th>Username:</th><td><input type="text" name="sendgrid_username" value="{{ site_settings['sendgrid_username'] }}" /></td></tr>
       <tr><th>Password:</th><td><input type="password" name="sendgrid_password" value="{{ site_settings['sendgrid_password'] }}" /></td></tr>
+      </table>
+      </div>
+      <h3>Auto update settings</h3>
+      <div id="autoupdate_settings">
+      <table class="form">
+      <tr><th>Github secret:</th><td><input type="password" name="github_auto_update_secret" value="{{ site_settings['github_auto_update_secret'] }}" /></td></tr>
       </table>
       </div>
       <input type="button" class="save" value="Save" /> <span></span>
