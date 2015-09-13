@@ -10,4 +10,6 @@ os.system('python scripts/setup_rethinkdb.py')
 # kill current instance of app.py
 os.system("sudo ps -ef | grep app.py | grep -v grep | awk '{print $2}' | sudo xargs kill -9")
 time.sleep(5)
-os.system("sudo python app.py > /home/ubuntu/app_log.txt 2>&1 &")
+import datetime
+dt = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+os.system("sudo python app.py > /home/ubuntu/app_log_%s.txt 2>&1 &" % (dt))
