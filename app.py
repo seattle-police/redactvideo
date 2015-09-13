@@ -264,6 +264,10 @@ def create_password():
     else:
         return redirect('/create_password/')
     
+@app.route('/incoming_email/', methods=['POST'])
+def incoming_email():
+    print request.form
+    return Response('')
     
 @socketio.on('my event', namespace='/test')
 def test_message(message):
@@ -283,5 +287,4 @@ def test_disconnect():
     print('Client disconnected')
 
 if __name__ == '__main__':
-    os.system('python scripts/setup_rethinkdb.py')
     socketio.run(app, host='0.0.0.0', port=80)
