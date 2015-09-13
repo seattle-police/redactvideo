@@ -1,0 +1,113 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>RedactVideo</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/cerulean/bootstrap.min.css" type="text/css" />
+    <script>
+    $(function() {
+      $('#request_an_account').click(function() {
+        
+        $.post('/submit_request_for_account/', {'agency_email': $('#agency_email').val()}, function(data) {
+          $('#account_request_msg').html(data['msg']);
+        });
+      });
+      $('#login').click(function() {
+        $.post('/login/', {'username': $('#username').val(), 'password': $('#password').val()}, function(data) {
+          $('#login_msg').html(data['msg']);
+        });
+      });
+    });
+    </script>
+    <style>
+    body {
+  padding-top: 50px;
+}
+.error {
+color:red;
+}
+#login_table th {
+padding-right:20px;
+}
+#videos {
+float:left;
+border-right:1px solid blue; 
+padding:0 40px 0 0;
+margin:0 20px 20px 0;
+width:480px;
+}
+#videos h3 {
+margin-top:0;
+}
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">RedactVideo</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="https://github.com/seattle-police">Code on GitHub</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+
+      <div class="starter-template">
+        <h2>Try video redaction software developed by the Seattle Police Department</h2>
+        <p class="lead">The <a href="http://www.seattle.gov/police/">Seattle Police Department</a> will start using body worn video (BWV) department wide in 2016.
+        To have a successful BWV program the department must efficiently handle the hundreds of public records requests it'll receive for the footage each year. This includes requests
+        for the entire collection. To deal with the onslaught of video requests the department held a hackathon in December 2014 and hired a civic hacker in May 2015 to develop software not commercially available.</p>
+        <p class="lead">This website, ran by the department, allows law enforcement agencies to try out the free open source redaction software that the department is developing. 
+        The software can over-blur and post online a group of videos automatically so requesters can get a sense of which videos are worth requesting while protecting people's identities. For formally requested videos requiring redaction it can track selected objects reducing redaction time. 
+        And it can also attempt to automatically redact every person's head for proactive publication.</p>
+        <p class="lead">
+        Agencies can have the department assist them with installing the software using their own
+        <a href="https://aws.amazon.com/">Amazon Web Services</a> or <a href="https://azure.microsoft.com/en-us/">Microsoft Azure</a>
+        cloud accounts at no extra charge by emailing <a href="mailto:timothy.clemans@seattle.gov">timothy.clemans@seattle.gov</a>.
+        For agencies not comfortable with the cloud the software can be installed on computers they own.</p>
+        <div id="videos"><h3>Videos from the department's June 2015 national meeting <em>Public Access to Footage: Balancing Transparency and Privacy</em></h2>
+        <script height="270px" width="480px" src="http://player.ooyala.com/iframe.js#ec=IxOHh0dTqZNsC3LGVnsbsKgmS3wOkuNu&pbid=c8cff4cec9d94ae0896f6443af7ee837"></script>
+        <iframe src="http://www.seattlechannel.org/embedvideoplayer?videoid=x56544" frameborder="0" scrolling="no"
+        style="height: 270px; width: 480px; margin-below:20px;" ></iframe>
+        <iframe src="http://www.seattlechannel.org/embedvideoplayer?videoid=x56534" frameborder="0" scrolling="no" 
+        style="height: 270px; width: 480px" ></iframe>
+        </div>
+        <h3>Request an account</h3>
+        <p>To request an account you must be a representative of a law enforcement agency. After confirming you control that email address you will be asked
+        to create a password. If your agency email address ends with .gov 
+        you will automatically be approved to use the site.  If your email doesn't end with .gov a person will verify that the email belongs to a law enforcement agency.</p>
+        <p id="request_account_form"><strong>Your agency email address:</strong> <input type="text" id="agency_email" />
+        <input type="button" id="request_an_account" value="Submit request" /> <span id="account_request_msg"></span>
+        </p>
+        
+        <h3>Login</h3>
+        <p><strong>Note:</strong> An email will be sent to you after you press login. To finish logging
+        in click on the link in the email. This is called two-factor authentication. It ensures that even if hackers have
+        your password they can't login unless they've compromised your email too.</p>
+        
+        <table id="login_table">
+        <tr><th>Email:</th><td><input type="text" id="username" name="username" /></td></tr>
+        <tr><th>Password:</th><td><input type="password" id="password" name="password" /></td></tr>
+        </table>
+        <input type="button" id="login" value="Login" /> <span id="login_msg"></span>
+        
+      </div>
+      
+    </div>
+    
+</body>
+</html>

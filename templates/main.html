@@ -1,0 +1,246 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>RedactVideo</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/cerulean/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.js"></script>
+    <script>
+    window.status = {}
+    function selectContainer(containerName) {
+      // hide all containers except the nav one
+      $('.container').not('nav .container').hide();
+      // show the clicked on container
+      $('#'+containerName+'_container').show();
+      // remove active class from currently active link
+      $('.active').removeClass("active");
+      // make the clicked on link's parent li active
+      var theLink = $("a[href^='#"+containerName+"']")
+      theLink.parent().addClass("active");
+    }
+    $(function() {
+      // hide all containers except the nav one
+      $('.container').not('nav .container').hide();
+      if (window.location.hash) {
+        var theHash = window.location.hash.slice(1);
+        selectContainer(theHash);
+      } else {
+        var defaultContainerName = 'upload_videos';
+        selectContainer(defaultContainerName);
+      }
+      $('#request_an_account').click(function() {
+        $.post('/submit_request_for_account/', {'agency_email': $('#agency_email').val()}, function(data) {
+          $('#request_account_form').text("Request sent. You'll receive an email when your account is created.");
+        });
+      });
+      $("a[href^='#']").click(function(e) {
+        var containerName = $(this).attr('href').slice(1);
+        selectContainer(containerName);
+  
+      });
+      // a method for getting an associative array of input field values
+      $.fn.form = function() {
+        var formData = {};
+        this.find('[name]').each(function() {
+          formData[this.name] = this.value;  
+        })
+        return formData;
+      };
+      $('.save').click(function() {
+        var inputFields = $(this).parent().form();
+        window.saveButton = $(this);
+        $.post('/change_site_settings/', inputFields, function (data) {
+          //console.log('updated');
+          window.saveButton.next("span").text('Settings updated.');
+        });
+      });
+      $('#overblur_and_publish_all_videos').click(function() {
+        $('#overblur_and_publish_all_videos').next().text('Processing');
+        $.get('/overblur_and_publish_all_videos/', function(data) {
+          $('#overblur_and_publish_all_videos').next().text('Done');    
+        });
+      });
+      Dropzone.options.dropzone = {
+        maxFilesize: 5000
+      }
+    });
+    </script>
+    <style>
+    body {
+  padding-top: 50px;
+}
+#login_table th {
+padding-right:20px;
+}
+li.right {
+float:right;
+}
+.main {
+margin-top:20px;
+}
+.main-nav {
+font-size:.9em;
+}
+.form th {
+padding:0 10px 10px 0;
+}
+.warning {
+color:red;
+}
+input[type=text] {
+width:150px;
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">RedactVideo</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav main-nav">
+            
+            <li><a href="#upload_videos">Upload videos</a></li>
+            <li><a href="#manage_videos">Manage videos</a></li>
+            <li><a href="#manage_publication">Manage publication</a></li>
+            <li><a href="#do_bulk_over_blur">Do bulk over-blur</a></li>
+            <li><a href="#do_precise_redaction">Do precise redaction</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+                {% if is_admin %}
+                <li>
+                    <a href="#site_settings">
+                        <span class="glyphicon glyphicon-cog" id="icon"> Site settings</span>  
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="#my_account">
+                        <span class="glyphicon glyphicon-user" id="icon"> My account</span>  
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout/">
+                        <span class="glyphicon glyphicon-off" id="icon"> Logout</span>  
+                    </a>
+                </li>
+            </ul> 
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div id="upload_videos_container" class="container main">
+    <h2>Upload videos</h2>
+      <h3>Upload from your computer</h3>
+      <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
+        <input type="hidden" name="key" value="{{ userid }}/${filename}">
+        <input type="hidden" name="AWSAccessKeyId" value="{{ upload['access_key_id'] }}">
+        <input type="hidden" name="acl" value="public-read">
+        <input type="hidden" name="policy" value="{{ upload['policy'] }}">
+        <input type="hidden" name="signature" value="{{ upload['signature'] }}">
+        <div class="dz-message" data-dz-message><span>Drag videos to this box or click here to upload videos.</span></div>
+      </form>
+            
+    
+    <h3>Copy videos from evidence.com to RedactVideo</h3>
+    <h3>Connect RedactVideo to your own Amazon S3 bucket</h3>
+    <h3>Copy a video from a url</h3>
+    <p>Currently Youtube and Dropbox urls are supported.</p>
+    </div>
+    
+    <div id="manage_videos_container" class="container main">
+      <h2>Manage videos</h2>
+      <table><tr><th>Filename</th></tr>
+      {% for video in videos %}
+      <tr><td>{{ video }}</td></tr>
+      {% endfor %}
+      </table>
+      
+    </div>
+    <div id="manage_publication_container" class="container main">
+      <h2>Manage publication</h2>
+      <h3>Youtube connection</h3>
+      <p>{% if has_authed_with_youtube %}
+      <a href="https://accounts.google.com/o/oauth2/auth?
+client_id={{ google_client_id }}&approval_prompt=force&
+redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
+scope=https://www.googleapis.com/auth/youtube.upload&
+response_type=token" target="_blank">Click here</a> to reauthenticate with Youtube.
+      {% else %}<a href="https://accounts.google.com/o/oauth2/auth?
+client_id={{ google_client_id }}&approval_prompt=force&
+redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
+scope=https://www.googleapis.com/auth/youtube.upload&
+response_type=token" target="_blank">Click here</a> to authenticate with Youtube.{% endif %}</p>
+    </div>
+    <div id="do_bulk_over_blur_container" class="container main">
+      <h2>Do bulk over-blur</h2>
+      <h3>On demand</h3>
+      <input type="button" value="Over-blur and publish all videos on this server" id="overblur_and_publish_all_videos" /> <span></span>
+      <h3>Automation settings</h3>
+      <ul>
+      <li><input type="radio" name="over_blur_settings" value="automatically_over_blur_and_publish" /> 
+      Automatically over-blur and publish any videos you upload</li>
+      <li><input type="radio" name="over_blur_settings" value="automatically_over_blur_but_manually_publish" /> 
+      Automatically over-blur but only publish what is manually approved</li>
+      </ul>
+    </div>
+    <div id="do_precise_redaction_container" class="container main">
+      <h2>Do precise redaction</h2>
+      <h3>Step 1. Upload the video to redact</h3>
+      <p>If you have already uploaded the video you want to precisely redact then <a href="#step_two_do_precise_redaction">click here</a>.</p>
+    </div>
+    <div id="site_settings_container" class="container main">
+    {% if is_admin %}
+      <h2>Site Settings</h2>
+      <h3>S3 settings</h3>
+      <div id="s3_settings">
+      <table class="form">
+      <tr><th>Bucket name:</th><td><input type="text" name="bucket_name" value="{{ site_settings['bucket_name'] }}" /></td></tr>
+      <tr><th>Access key ID:</th><td><input type="text" name="access_key_id" value="{{ site_settings['access_key_id'] }}" /></td></tr>
+      <tr><th>Secret access key:</th><td><input type="password" name="secret_access_key" value="{{ site_settings['secret_access_key'] }}" /></td></tr>
+      </table>
+      <input type="button" class="save" value="Save" /> <span></span>
+      </div>
+      <h3>Google API settings</h3>
+      <div id="google_api_settings">
+      <table class="form">
+      <tr><th>Client ID:</th><td><input type="text" name="google_client_id" value="{{ site_settings['google_client_id'] }}" /></td></tr>
+      <tr><th>Client secret:</th><td><input type="text" name="google_client_secret" value="{{ site_settings['google_client_secret'] }}" /></td></tr>
+      </table>
+      <h3>SendGrid settings</h3>
+      <div id="sendgrid_settings">
+      <table class="form">
+      <tr><th>Username:</th><td><input type="text" name="sendgrid_username" value="{{ site_settings['sendgrid_username'] }}" /></td></tr>
+      <tr><th>Password:</th><td><input type="password" name="sendgrid_password" value="{{ site_settings['sendgrid_password'] }}" /></td></tr>
+      </table>
+      </div>
+      <input type="button" class="save" value="Save" /> <span></span>
+      </div>
+    {% endif %}
+    </div>
+    <div id="my_account_container" class="container main">
+    <h2>My account</h2>
+      <h3>Change password</h3>
+      <p><strong class="warning">IMPORTANT SECURITY ADVICE:</strong> <ol><li>Make your password significantly different from 
+      any you have ever used. Doing so 
+      protects this account if another account is compromised.</li>
+      <li>
+      Use an unguessable password. For example turn a sentence into a password. </li>
+      </ol>
+      The above advice is from security expert Bruce Schneier at <a href="https://www.schneier.com/blog/archives/2014/03/choosing_secure_1.html" target="_blank">
+      Choosing Secure Passwords</a>.
+      </p>
+    </div>
+    
+</body>
+</html>

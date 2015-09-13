@@ -1,0 +1,17 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>RedactVideo</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script>
+    $(function() {
+        var token = window.location.href.split("access_token=")[1]; 
+        $.get('/save_youtube_oauth_data/', {'token': token}, function(data) {
+            window.close();
+        });
+    });
+    </script>
+    </head>
+    <body>
+</body>
+</html>
