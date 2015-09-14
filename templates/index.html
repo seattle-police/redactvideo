@@ -7,7 +7,31 @@
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/cerulean/bootstrap.min.css" type="text/css" />
     <script>
+    function selectContainer(containerName) {
+      // hide all containers except the nav one
+      $('.container').not('nav .container').hide();
+      // show the clicked on container
+      $('#'+containerName+'_container').show();
+      // remove active class from currently active link
+      $('.active').removeClass("active");
+      // make the clicked on link's parent li active
+      var theLink = $("a[href^='#"+containerName+"']")
+      theLink.parent().addClass("active");
+    }
     $(function() {
+      $('.container').not('nav .container').hide();
+      if (window.location.hash) {
+        var theHash = window.location.hash.slice(1);
+        selectContainer(theHash);
+      } else {
+        var defaultContainerName = 'home';
+        selectContainer(defaultContainerName);
+      }
+      $("a[href^='#']").click(function(e) {
+        var containerName = $(this).attr('href').slice(1);
+        selectContainer(containerName);
+  
+      });
       $('#request_an_account').click(function() {
         
         $.post('/submit_request_for_account/', {'agency_email': $('#agency_email').val()}, function(data) {
@@ -41,6 +65,13 @@ width:480px;
 #videos h3 {
 margin-top:0;
 }
+h2 span {
+font-size:.9em;
+}
+.floatleft {
+float:left;
+margin:0 10px 10px 0;
+}
     </style>
 </head>
 <body>
@@ -53,21 +84,28 @@ margin-top:0;
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">RedactVideo</a>
+          <span class="navbar-brand">RedactVideo</span>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
+          <ul class="nav navbar-nav main-nav">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#the_seattle_story">The Seattle Police Story</a></li>
+            <li><a href="#video_library">SPD's Video library</a></li>
+            <li><a href="#pilot_policy">SPD's BWV pilot policy</a></li>
+            <li><a href="#faq">FAQs</a></li>
+            <li><a href="#demo">Demo</a></li>
             <li><a href="https://github.com/seattle-police/redactvideodotorg/">Code on GitHub</a></li>
+            <li><a href="#get_involved">Get involved</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
-    <div class="container">
+    <div id="home_container" class="container">
 
       <div class="starter-template">
-        <h2>Try video redaction software developed by the Seattle Police Department</h2>
+        <h2>Web based video redaction software developed by the Seattle Police Department</h2>
+        <img src="http://www.seattle.gov/police/images/footerShield.png" class="floatleft" />
         <p class="lead">The <a href="http://www.seattle.gov/police/">Seattle Police Department</a> will start using body worn video (BWV) department wide in 2016.
         To have a successful BWV program the department must efficiently handle the hundreds of public records requests it'll receive for the footage each year. This includes requests
         for the entire collection. To deal with the onslaught of video requests the department held a hackathon in December 2014 and hired a civic hacker in May 2015 to develop software not commercially available.</p>
@@ -108,6 +146,41 @@ margin-top:0;
       </div>
       
     </div>
-    
+    <div id="the_seattle_story_container" class="container">
+    <h2>The Seattle Police Story: <span>Received valid records request for our 1.6 million dash camera videos, held hackathon, launched body worn video (BWV) pilot, hired the programmer who demanded the videos, posted thousands of blurred videos on Youtube, now providing law enforcement 
+    with free open source video redaction software, and preparing to deploy BWV department-wide</span></h2>
+      <p>In June of 2014 The Supreme Court of Washington ruled in Fisher v. Seattle Police that we, the Seattle Police Department, must provide virtually all dash camera videos  
+not apart of an active investigation or pending litigation when formally requested to do so. The litigants, Fisher Broadcasting, agreed to narrow their request from thousands of videos to 151 videos.
+Even then it was a big challenge. We also started getting lots of smaller requests. So we started the Video to Public project to figure out ways to more efficiently handle records requests.</p>
+<p>Three months later, in September, we and other Washington police departments receive an anonymous records request for all dash and body worn video. 
+Our attorneys told us we had to start fulfilling the anonymous request even though we had 1.6 million videos amounting to over three hundred thousand hours.
+To protect the privacy of juveniles, confidential witnesses/victims, patients, and people's identification numbers we have to watch any requested video from start to finish. In some cases we are required to do manual redaction that takes us hours per video.</p> 
+<p>Soon our anonymous requester was posting on Youtube a wide range of police encounters from the mundane to foot chases. This sparked privacy concerns.</p>
+<p>We considered cancelling our plans to test body worn video until the records act was significantly modified. But we knew that
+ultimately wasn't an option for us because of the settlement agreement with the Department of Justice. The state legislature decided
+not to modify the records act even though a highly negotiated proposed bill was passed by committee.</p>
+<p>Surrounded by tech giants like Amazon, Microsoft, Google, Facebook, Twitter, Vievu, Socrata, and Taser we decided to hold a hackathon in December 2014.
+Among the presenters were college students, civic hackers, freelance video redaction experts, and industry representatives.
+They presented technologies in their infancy that automatically detect and redact faces and sensitive audio. </p>
+<p>Our anonymous requester maker dropped his request with us and presented a strategy called over-redaction. Using that strategy
+we demonstrated that we are committed to transparency. We got lots of positive press coverage.
+We automatically remove audio and blur each frame. One
+can make out what's going on visually while protecting the identities of citizens. If a viewer thinks something fishy was recorded they are 
+able to save us a lot of time by telling us not only the video they want but the time periods that matter to them.</p>
+<p>After several months of volunteering, we hired the anonymous requester, Tim Clemans, in May of this year as a temporary employee. The goal was to apply over-redaction to thousands of body worn videos and corresponding police report narratives. 
+The strategy was immediately proven effective
+when the news outlet that sued us made a request for just 48 minutes of footage out of three hundred minutes footage recorded at the May Day riot
+ after viewing the automatically
+over-redacted videos on our Youtube channel. Clemans went on to develop software vital to our new Realtime Crime Center alerting its staff to important dispatch messages using keywords.</p>
+<p>With transparency vs privacy becoming the number one roadblock for implementing body worn video we tasked Clemans this September with making the software
+available for any law enforcement agency to use as easily and inexpensively as possible. Our partners at Amazon and Microsoft are providing us
+with cloud storage and computing to make this happen. Our code is open source so anyone can use it on their own machines as well as improve it.
+We will continue to make our video redaction platform more sophisticated with the goal of automatically redacting faces and personal info from sound.
+In the meantime we have a proven way for requesters to narrow their requests while demonstrating a commitment to transparency that balances privacy. </p>
+
+ 
+
+
+    </div>
 </body>
 </html>
