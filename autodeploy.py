@@ -13,4 +13,6 @@ os.system("sudo fuser -k 80/tcp")
 #time.sleep(20)
 import datetime
 dt = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-os.system("sudo python app.py > /home/ubuntu/app_log_%s.txt 2>&1 &" % (dt))
+os.system("sudo python app.py")
+#os.system("sudo python app.py > /home/ubuntu/app_log_%s.txt 2>&1 &" % (dt))
+#os.system("sudo tail -f /home/ubuntu/app_log_%s.txt" % (dt))

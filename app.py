@@ -19,7 +19,10 @@ from boto.s3.key import Key
 import os,sys
 
 def get_setting(setting):
-    return db.table('settings').get(setting).run(conn)['value']       
+    try:
+        return db.table('settings').get(setting).run(conn)['value']   
+    except:
+        return ''    
 
 # Need to wait for RethinkDB to be running
 # in rc.local there's no wait between starting rethinkdb and
@@ -48,10 +51,13 @@ def is_logged_in(request):
         
 @app.route('/')
 def index():
+    context = {}
+    context['google_analytics_tracking_id'] = get_setting('google_analytics_tracking_id')
     if is_logged_in(request):
-        context = {}
+        
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         context['userid'] = user_id
+        print user_id
         user_data = db.table('users').get(user_id).run(conn)
         import base64
         import hmac, hashlib
@@ -78,7 +84,10 @@ def index():
         context['google_client_id'] = get_setting('google_client_id')
         if user_data['is_admin']:
             context['site_settings'] = dict([(item['id'],item['value']) for item in db.table('settings').run(conn)])
-            
+        if user_data.get('settings'):
+            context['user_settings'] = user_data['settings']
+        else:
+            context['user_settings'] = {'access_key_id': '', 'secret_access_key': ''}
         return render_template('main.html', **context)
         
     elif db.table('users').count().run(conn) == 0:
@@ -118,7 +127,39 @@ def change_site_settings():
             settings = [{'id': item[0], 'value': item[1]} for item in request.form.items()]
             db.table('settings').insert(settings, conflict='update').run(conn)
             return Response(json.dumps({'success': True}))
-        
+
+@app.route('/change_user_settings/', methods=['POST'])
+def change_user_settings():
+    print 'runns'
+    if is_logged_in(request):
+        user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
+        user_data = db.table('users').get(user_id).run(conn) 
+        if user_data.get('settings'):
+            settings = user_data['settings']
+        else:
+            settings = {}
+        print 'request data', dict(request.form)
+        # sometimes request.form is in the form of {'x': ['value']} instead of
+        # {'x': 'value'} so need to convert to
+        #  {'x': 'value'}
+        form = dict([(item[0], item[1] if isinstance(item[1], basestring) else item[1][0]) for item in request.form.items()])
+        settings.update(form)
+        print 'settings', settings
+        db.table('users').get(user_id).update({'settings': settings}).run(conn)
+        print db.table('users').get(user_id).run(conn)
+        return Response(json.dumps({'success': True}))            
+
+@app.route('/get_users_s3_buckets/', methods=['GET'])
+def get_users_s3_buckets():
+    print 'runns'
+    if is_logged_in(request):
+        user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
+        user_data = db.table('users').get(user_id).run(conn) 
+        settings = user_data.get('settings')
+        s3conn_for_user = S3Connection(settings['access_key_id'], settings['secret_access_key'])
+        #s3conn_for_user.get_all_buckets()
+        return Response(json.dumps({'buckets': s3conn_for_user.get_all_buckets()}))   
+
         
 @app.route('/logout/')        
 def logout():
