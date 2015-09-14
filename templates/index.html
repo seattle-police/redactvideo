@@ -5,46 +5,966 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    
+      <script type='text/javascript' src="https://maps.googleapis.com/maps/api/js?sensor=true"></script>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/cerulean/bootstrap.min.css" type="text/css" />
     <script>
-    function selectContainer(containerName) {
-      // hide all containers except the nav one
-      $('.container').not('nav .container').hide();
-      // show the clicked on container
-      $('#'+containerName+'_container').show();
-      // remove active class from currently active link
-      $('.active').removeClass("active");
-      // make the clicked on link's parent li active
-      var theLink = $("a[href^='#"+containerName+"']")
-      theLink.parent().addClass("active");
+function selectContainer(containerName) {
+    // hide all containers except the nav one
+    $('.container').not('nav .container').hide();
+    // show the clicked on container
+    $('#' + containerName + '_container').show();
+    // remove active class from currently active link
+    $('.active').removeClass("active");
+    // make the clicked on link's parent li active
+    var theLink = $("a[href^='#" + containerName + "']")
+    theLink.parent().addClass("active");
+}
+
+function cad() {
+    //console.log("CAD MAP");
+    // Intialize our map
+    var center = new google.maps.LatLng(47.6169887, -122.2867016);
+    var mapOptions = {
+        zoom: 13,
+        center: center
     }
-    $(function() {
-      $('.container').not('nav .container').hide();
-      if (window.location.hash) {
+    var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+
+    //$.get('https://data.seattle.gov/resource/y7pv-r3kh.json?$where=general_offense_number=%222015903263%22%20OR%20general_offense_number=%222015162089%22')
+
+    $.get('https://data.seattle.gov/resource/n6as-h2bj.json?$select=id_external&$group=id_external', function(data) {
+
+        window.goNumbers = [];
+        window.goNumberConversion = {};
+        var str = 'For more information, see Chapter 3.4.5.1';
+        var re = /^\d+\-\d+$/i;
+        var found = str.match(re);
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]['id_external'].match(re)) {
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                //if (parts[1].length < 6) {
+                //    parts[1] = '0'+parts[1];   
+                //}
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                for (var j = 0; j < parts[1].length; j++) {
+                    if (parts[1][j] == '0') {
+                        parts[1] = parts[1].slice(1);
+                        //console.log(parts[1]);
+                    } else {
+                        break;
+                    }
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                if (parts[1].length < 6) {
+                    parts[1] = '0'.repeat(6 - parts[1].length) + parts[1];
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+            }
+        }
+        $.get('https://data.seattle.gov/resource/dqyq-sizd.json?$select=opa_case_number,external_case_number&$order=opa_case_number&$where=external_case_number%20IS%20NOT%20NULL', function(data2) {
+            window.opaCases = [];
+            //console.log(JSON.stringify(data2));
+            for (var i = 0; i < data2.length; i++) {
+                if (window.goNumbers.indexOf(data2[i]['external_case_number'].replace('-', '')) > -1) {
+                    if (window.opaCases.indexOf(data2[i]['external_case_number']) == -1) {
+                        window.opaCases.push(data2[i]['external_case_number']);
+                        $('#opa_cases').append('<option value="' + data2[i]['external_case_number'] + '">' + data2[i]['opa_case_number'] + ' (' + data2[i]['external_case_number'] + ')</option>');
+                    }
+                }
+
+            }
+            //console.log(JSON.stringify(window.opaCases));
+        });
+        var url = 'https://data.seattle.gov/resource/y7pv-r3kh.json?$where=';
+        for (var i = 0; i < window.goNumbers.length; i++) {
+            url += 'general_offense_number=%22' + window.goNumbers[i] + '%22';
+            if (i != (window.goNumbers.length - 1)) {
+                url += ' OR ';
+            }
+        }
+        $.get('https://data.seattle.gov/resource/pu5n-trf4.json?$limit=50000&$where=(district_sector=%22E%22%20OR%20district_sector=%22C%22%20OR%20district_sector=%22G%22)%20AND%20at_scene_time%20between%20%272014-12-18T12:00:00%27%20and%20%272015-03-30T14:00:00%27', function(data) {
+            window.rms = [];
+            for (var i = 0; i < data.length; i++) {
+                //console.log(window.goNumbers+' '+data[i]['general_offense_number']);
+                //console.log(data[i]['general_offense_number']);
+                if (window.goNumbers.indexOf(data[i]['general_offense_number']) > -1) {
+                    //console.log('yes');
+                    window.rms.push(data[i]);
+                }
+            }
+            //console.log(window.rms);
+            $.each(window.rms, function(i, entry) {
+                var contentString = '<div id="content">' +
+                    '<div id="siteNotice">' +
+                    '</div>' +
+                    '<h1 id="firstHeading" class="firstHeading">' + entry.initial_type_description + ' (' + entry.general_offense_number + ')</h1>' +
+                    '<div id="bodyContent">' +
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" onclick="showEvent(\''+goNumberConversion[entry.general_offense_number]+'\')" />'+
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" />'+
+                    '</div>' +
+                    '</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: contentString
+                });
+                var icon_name = entry.initial_type_group.replace(' ', '').replace('IES', 'Y').trim();
+                if (icon_name.endsWith('CALLS')) {
+                    //console.log(icon_name);
+                    icon_name = icon_name.substring(0, icon_name.length - 5);
+                }
+                if (icon_name == 'CASUALTY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'GUN') {
+                    icon_name = 'WEAPON';
+                }
+                if (icon_name.endsWith('S') && icon_name != 'TRESPASS') {
+                    icon_name = icon_name.substring(0, icon_name.length - 1);
+                }
+                if (icon_name == 'PERSONDOWN/INJURY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'AUTORECOVERY') {
+                    icon_name = 'VehicleTheft';
+                }
+                if (icon_name == 'THREATS,HARASSMENT') {
+                    icon_name = 'Threats';
+                }
+                if (icon_name == 'THEFT') {
+                    icon_name = 'OtherProp';
+                }
+                if (icon_name.indexOf('TRAFFICRELATED') > -1) {
+                    icon_name = 'TRAFFIC';
+                }
+                if (icon_name == 'LIQUORVIOLATION') {
+                    icon_name = 'Liquor';
+                }
+                if (icon_name.indexOf('BURGLARY') > -1) {
+                    icon_name = 'Burglary';
+                }
+                if (icon_name.indexOf('MISC') > -1) {
+                    icon_name = 'Misc';
+                }
+                if (icon_name.indexOf('NAR') > -1) {
+                    icon_name = 'Narcotics';
+                }
+                if (icon_name.indexOf('SUS') > -1) {
+                    icon_name = 'Suspicious';
+                }
+                if (icon_name.indexOf('DISTURBANCE') > -1) {
+                    icon_name = 'Disturbance';
+                }
+                if (icon_name.indexOf('DAMAGE') > -1) {
+                    icon_name = 'PropDamage';
+                }
+                if (icon_name.indexOf('PARKING') > -1) {
+                    icon_name = 'VehicleTheft';
+                }
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(entry.latitude,
+                        entry.longitude),
+                    map: map,
+                    title: entry.general_offense_number,
+                    icon: 'http://web6.seattle.gov/mnm/images/crime2//' + icon_name + '.png'
+                });
+                marker.set("event_id", goNumberConversion[entry.general_offense_number]);
+                google.maps.event.addListener(marker, 'click', function() {
+                    $.get('https://data.seattle.gov/resource/ktpa-re45.json?go_number=' + entry.general_offense_number, function(rmsdata) {
+                        if (rmsdata.length > 0) {
+                            $('#narrative').html(rmsdata[0]['narrative']);
+                        } else {
+                            $('#narrative').html('');
+                        }
+                    });
+                    showEvent(entry.general_offense_number);
+                    //$(this).find('input').trigger('click');
+                    //console.log($(this).find('input'));
+                    if (openedInfoWindow != null)
+                        openedInfoWindow.close();
+                    infowindow.open(map, marker);
+                    openedInfoWindow = infowindow;
+                    google.maps.event.addListener(infowindow, 'closeclick', function() {
+                        openedInfoWindow = null;
+                    });
+                    google.maps.event.addListener(map, 'click', function() {
+                        infowindow.close();
+                    });
+                });
+            });
+        });
+        //console.log(url); // url too long for DSG
+        //console.log(window.goNumbers);
+
+    });
+}
+
+function rms() {
+
+    // Intialize our map
+    var center = new google.maps.LatLng(47.6169887, -122.2867016);
+    var mapOptions = {
+        zoom: 13,
+        center: center
+    }
+    var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+
+    //$.get('https://data.seattle.gov/resource/y7pv-r3kh.json?$where=general_offense_number=%222015903263%22%20OR%20general_offense_number=%222015162089%22')
+
+    $.get('https://data.seattle.gov/resource/n6as-h2bj.json?$select=id_external&$group=id_external', function(data) {
+
+        window.goNumbers = [];
+        window.goNumberConversion = {};
+        var str = 'For more information, see Chapter 3.4.5.1';
+        var re = /^\d+\-\d+$/i;
+        var found = str.match(re);
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]['id_external'].match(re)) {
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                //if (parts[1].length < 6) {
+                //    parts[1] = '0'+parts[1];   
+                //}
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                for (var j = 0; j < parts[1].length; j++) {
+                    if (parts[1][j] == '0') {
+                        parts[1] = parts[1].slice(1);
+                        //console.log(parts[1]);
+                    } else {
+                        break;
+                    }
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                if (parts[1].length < 6) {
+                    parts[1] = '0'.repeat(6 - parts[1].length) + parts[1];
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+            }
+        }
+        $.get('https://data.seattle.gov/resource/dqyq-sizd.json?$select=opa_case_number,external_case_number&$order=opa_case_number&$where=external_case_number%20IS%20NOT%20NULL', function(data2) {
+            window.opaCases = [];
+            //console.log(JSON.stringify(data2));
+            $('#opa_cases').html('');
+            for (var i = 0; i < data2.length; i++) {
+                if (window.goNumbers.indexOf(data2[i]['external_case_number'].replace('-', '')) > -1) {
+                    if (window.opaCases.indexOf(data2[i]['external_case_number']) == -1) {
+                        window.opaCases.push(data2[i]['external_case_number']);
+                        $('#opa_cases').append('<option value="' + data2[i]['external_case_number'] + '">' + data2[i]['opa_case_number'] + ' (' + data2[i]['external_case_number'] + ')</option>');
+                    }
+                }
+
+            }
+            //console.log(JSON.stringify(window.opaCases));
+        });
+        var url = 'https://data.seattle.gov/resource/y7pv-r3kh.json?$where=';
+        for (var i = 0; i < window.goNumbers.length; i++) {
+            url += 'general_offense_number=%22' + window.goNumbers[i] + '%22';
+            if (i != (window.goNumbers.length - 1)) {
+                url += ' OR ';
+            }
+        }
+        $.get('https://data.seattle.gov/resource/y7pv-r3kh.json?$limit=50000&$where=(district_sector=%22E%22%20OR%20district_sector=%22C%22%20OR%20district_sector=%22G%22)%20AND%20date_reported%20between%20%272014-12-18T12:00:00%27%20and%20%272015-03-30T14:00:00%27', function(data) {
+            window.rms = [];
+            for (var i = 0; i < data.length; i++) {
+                //console.log(window.goNumbers+' '+data[i]['general_offense_number']);
+                //console.log(data[i]['general_offense_number']);
+                if (window.goNumbers.indexOf(data[i]['general_offense_number']) > -1) {
+                    //console.log('yes');
+                    window.rms.push(data[i]);
+                }
+            }
+            //console.log(window.rms);
+            $.each(window.rms, function(i, entry) {
+                var contentString = '<div id="content">' +
+                    '<div id="siteNotice">' +
+                    '</div>' +
+                    '<h1 id="firstHeading" class="firstHeading">' + entry.offense_type + ' (' + entry.general_offense_number + ')</h1>' +
+                    '<div id="bodyContent">' +
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" onclick="showEvent(\''+goNumberConversion[entry.general_offense_number]+'\')" />'+
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" />'+
+                    '</div>' +
+                    '</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: contentString
+                });
+                var icon_name = entry.offense_type.replace(' ', '').replace('IES', 'Y').trim();
+                if (icon_name.endsWith('CALLS')) {
+                    //console.log(icon_name);
+                    icon_name = icon_name.substring(0, icon_name.length - 5);
+                }
+                if (icon_name == 'CASUALTY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'GUN') {
+                    icon_name = 'WEAPON';
+                }
+                if (icon_name.endsWith('S') && icon_name != 'TRESPASS') {
+                    icon_name = icon_name.substring(0, icon_name.length - 1);
+                }
+                if (icon_name == 'PERSONDOWN/INJURY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'AUTORECOVERY') {
+                    icon_name = 'VehicleTheft';
+                }
+                if (icon_name == 'THREATS,HARASSMENT') {
+                    icon_name = 'Threats';
+                }
+                if (icon_name == 'THEFT') {
+                    icon_name = 'OtherProp';
+                }
+                if (icon_name.indexOf('TRAFFICRELATED') > -1) {
+                    icon_name = 'TRAFFIC';
+                }
+                if (icon_name == 'LIQUORVIOLATION') {
+                    icon_name = 'Liquor';
+                }
+                if (icon_name.indexOf('BURGLARY') > -1) {
+                    icon_name = 'Burglary';
+                }
+                if (icon_name.indexOf('MISC') > -1) {
+                    icon_name = 'Misc';
+                }
+                if (icon_name.indexOf('NAR') > -1) {
+                    icon_name = 'Narcotics';
+                }
+                if (icon_name.indexOf('SUS') > -1) {
+                    icon_name = 'Suspicious';
+                }
+                if (icon_name.indexOf('DISTURBANCE') > -1) {
+                    icon_name = 'Disturbance';
+                }
+                if (icon_name.indexOf('DAMAGE') > -1) {
+                    icon_name = 'PropDamage';
+                }
+                if (icon_name.indexOf('PARKING') > -1) {
+                    icon_name = 'VehicleTheft';
+                }
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(entry.latitude,
+                        entry.longitude),
+                    map: map,
+                    title: entry.general_offense_number,
+                    icon: 'http://web6.seattle.gov/mnm/images/crime2//' + icon_name + '.png'
+                });
+                marker.set("event_id", goNumberConversion[entry.general_offense_number]);
+                google.maps.event.addListener(marker, 'click', function() {
+                    $.get('https://data.seattle.gov/resource/ktpa-re45.json?go_number=' + entry.general_offense_number, function(rmsdata) {
+                        if (rmsdata.length > 0) {
+                            $('#narrative').html(rmsdata[0]['narrative']);
+                        } else {
+                            $('#narrative').html('');
+                        }
+                    });
+                    showEvent(entry.general_offense_number);
+                    //$(this).find('input').trigger('click');
+                    //console.log($(this).find('input'));
+                    if (openedInfoWindow != null)
+                        openedInfoWindow.close();
+                    infowindow.open(map, marker);
+                    openedInfoWindow = infowindow;
+                    google.maps.event.addListener(infowindow, 'closeclick', function() {
+                        openedInfoWindow = null;
+                    });
+                    google.maps.event.addListener(map, 'click', function() {
+                        infowindow.close();
+                    });
+                });
+            });
+        });
+        //console.log(url); // url too long for DSG
+        //console.log(window.goNumbers);
+
+    });
+}
+
+function rms_with_narrative() {
+
+    // Intialize our map
+    var center = new google.maps.LatLng(47.6169887, -122.2867016);
+    var mapOptions = {
+        zoom: 13,
+        center: center
+    }
+    var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+
+    //$.get('https://data.seattle.gov/resource/y7pv-r3kh.json?$where=general_offense_number=%222015903263%22%20OR%20general_offense_number=%222015162089%22')
+
+    $.get('https://data.seattle.gov/resource/n6as-h2bj.json?$select=id_external&$group=id_external', function(data) {
+
+        window.goNumbers = [];
+        window.goNumberConversion = {};
+        var str = 'For more information, see Chapter 3.4.5.1';
+        var re = /^\d+\-\d+$/i;
+        var found = str.match(re);
+        for (var i = 0; i < data.length; i++) {
+            if (data[i]['id_external'].match(re)) {
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                //if (parts[1].length < 6) {
+                //    parts[1] = '0'+parts[1];   
+                //}
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                for (var j = 0; j < parts[1].length; j++) {
+                    if (parts[1][j] == '0') {
+                        parts[1] = parts[1].slice(1);
+                        //console.log(parts[1]);
+                    } else {
+                        break;
+                    }
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+                var goNumber = data[i]['id_external'];
+                var parts = goNumber.split("-");
+                if (parts[0].length != 4) {
+                    parts[0] = '20' + parts[0];
+                }
+                if (parts[1].length < 6) {
+                    parts[1] = '0'.repeat(6 - parts[1].length) + parts[1];
+                }
+                goNumber = parts[0] + parts[1];
+                window.goNumbers.push(goNumber);
+                window.goNumberConversion[goNumber] = data[i]['id_external'];
+            }
+        }
+        $.get('https://data.seattle.gov/resource/dqyq-sizd.json?$select=opa_case_number,external_case_number&$order=opa_case_number&$where=external_case_number%20IS%20NOT%20NULL', function(data2) {
+            window.opaCases = [];
+            //console.log(JSON.stringify(data2));
+            for (var i = 0; i < data2.length; i++) {
+                if (window.goNumbers.indexOf(data2[i]['external_case_number'].replace('-', '')) > -1) {
+                    if (window.opaCases.indexOf(data2[i]['external_case_number']) == -1) {
+                        window.opaCases.push(data2[i]['external_case_number']);
+                        $('#opa_cases').append('<option value="' + data2[i]['external_case_number'] + '">' + data2[i]['opa_case_number'] + ' (' + data2[i]['external_case_number'] + ')</option>');
+                    }
+                }
+
+            }
+            //console.log(JSON.stringify(window.opaCases));
+        });
+        var url = 'https://data.seattle.gov/resource/y7pv-r3kh.json?$where=';
+        for (var i = 0; i < window.goNumbers.length; i++) {
+            url += 'general_offense_number=%22' + window.goNumbers[i] + '%22';
+            if (i != (window.goNumbers.length - 1)) {
+                url += ' OR ';
+            }
+        }
+        $.get('https://data.seattle.gov/resource/y7pv-r3kh.json?$limit=50000&$where=(district_sector=%22E%22%20OR%20district_sector=%22C%22%20OR%20district_sector=%22G%22)%20AND%20date_reported%20between%20%272014-12-18T12:00:00%27%20and%20%272015-03-30T14:00:00%27', function(data) {
+            window.rmsn = [];
+            window.rmsnum = [];
+            window.rms = [];
+            //console.log(data.length);
+            for (var i = 0; i < data.length; i++) {
+                //console.log(window.goNumbers+' '+data[i]['general_offense_number']);
+                //console.log(data[i]['general_offense_number']);
+                if (window.goNumbers.indexOf(data[i]['general_offense_number']) > -1) {
+                    window.rmsnum.push(data[i]['general_offense_number']);
+
+                }
+            }
+            window.rmsn = window.narrative_go_numbers.filter(function(n) {
+                return window.rmsnum.indexOf(n) != -1
+            });
+            //console.log(window.narrative_go_numbers.length+' '+window.rmsn);
+            for (var i = 0; i < data.length; i++) {
+                //console.log(window.goNumbers+' '+data[i]['general_offense_number']);
+                //console.log(data[i]['general_offense_number']);
+                if (window.goNumbers.indexOf(data[i]['general_offense_number']) > -1) {
+                    //console.log('yes');
+                    //console.log(data[i]['general_offense_number']);
+                    if (window.narrative_go_numbers.indexOf(data[i]['general_offense_number']) > -1) {
+                        //console.log(data[i]['general_offense_number']);
+                        window.rms.push(data[i]);
+                    }
+                }
+            }
+            //console.log(window.rms);
+            $.each(window.rms, function(i, entry) {
+                var contentString = '<div id="content">' +
+                    '<div id="siteNotice">' +
+                    '</div>' +
+                    '<h1 id="firstHeading" class="firstHeading">' + entry.offense_type + ' (' + entry.general_offense_number + ')</h1>' +
+                    '<div id="bodyContent">' +
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" onclick="showEvent(\''+goNumberConversion[entry.general_offense_number]+'\')" />'+
+                    //'<input type="button" value="Show videos" class="map_show_videos" data-event-number="'+goNumberConversion[entry.general_offense_number]+'" />'+
+                    '</div>' +
+                    '</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: contentString
+                });
+                var icon_name = entry.offense_type.replace(' ', '').replace('IES', 'Y').trim();
+                if (icon_name.endsWith('CALLS')) {
+                    //console.log(icon_name);
+                    icon_name = icon_name.substring(0, icon_name.length - 5);
+                }
+                if (icon_name == 'CASUALTY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'GUN') {
+                    icon_name = 'WEAPON';
+                }
+                if (icon_name.endsWith('S') && icon_name != 'TRESPASS') {
+                    icon_name = icon_name.substring(0, icon_name.length - 1);
+                }
+                if (icon_name == 'PERSONDOWN/INJURY') {
+                    icon_name = 'INJURY';
+                }
+                if (icon_name == 'AUTORECOVERY') {
+                    icon_name = 'VehicleTheft';
+                }
+                if (icon_name == 'THREATS,HARASSMENT') {
+                    icon_name = 'Threats';
+                }
+                if (icon_name == 'THEFT') {
+                    icon_name = 'OtherProp';
+                }
+                if (icon_name.indexOf('TRAFFICRELATED') > -1) {
+                    icon_name = 'TRAFFIC';
+                }
+                if (icon_name == 'LIQUORVIOLATION') {
+                    icon_name = 'Liquor';
+                }
+                if (icon_name.indexOf('BURGLARY') > -1) {
+                    icon_name = 'Burglary';
+                }
+                if (icon_name.indexOf('MISC') > -1) {
+                    icon_name = 'Misc';
+                }
+                if (icon_name.indexOf('NAR') > -1) {
+                    icon_name = 'Narcotics';
+                }
+                if (icon_name.indexOf('SUS') > -1) {
+                    icon_name = 'Suspicious';
+                }
+                if (icon_name.indexOf('DISTURBANCE') > -1) {
+                    icon_name = 'Disturbance';
+                }
+                if (icon_name.indexOf('DAMAGE') > -1) {
+                    icon_name = 'PropDamage';
+                }
+                if (icon_name.indexOf('PARKING') > -1) {
+                    icon_name = 'VehicleTheft';
+                }
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(entry.latitude,
+                        entry.longitude),
+                    map: map,
+                    title: entry.general_offense_number,
+                    icon: 'http://web6.seattle.gov/mnm/images/crime2//' + icon_name + '.png'
+                });
+                marker.set("event_id", goNumberConversion[entry.general_offense_number]);
+                google.maps.event.addListener(marker, 'click', function() {
+                    $.get('https://data.seattle.gov/resource/ktpa-re45.json?go_number=' + entry.general_offense_number, function(rmsdata) {
+                        if (rmsdata.length > 0) {
+                            $('#narrative').html(rmsdata[0]['narrative']);
+                        } else {
+                            $('#narrative').html('');
+                        }
+                    });
+                    showEvent(entry.general_offense_number);
+                    //$(this).find('input').trigger('click');
+                    //console.log($(this).find('input'));
+                    if (openedInfoWindow != null)
+                        openedInfoWindow.close();
+                    infowindow.open(map, marker);
+                    openedInfoWindow = infowindow;
+                    google.maps.event.addListener(infowindow, 'closeclick', function() {
+                        openedInfoWindow = null;
+                    });
+                    google.maps.event.addListener(map, 'click', function() {
+                        infowindow.close();
+                    });
+                });
+            });
+        });
+        //console.log(url); // url too long for DSG
+        //console.log(window.goNumbers);
+
+    });
+}
+
+function toTitleCase(str) {
+    try {
+        return str.replace(/\w\S*/g, function(txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+    } catch (e) {
+        return str;
+    }
+}
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+        var subjectString = this.toString();
+        if (position === undefined || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.indexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
+}
+var openedInfoWindow = null;
+
+function isSensitive(category) {
+    if (category == undefined) {
+        return false;
+    }
+    var sensitiveCategories = ['Rape', 'Homicide', 'Crisis', 'Suicide'];
+    var is_sensitive = false;
+    if (category.indexOf('|') > -1) {
+        var c = category.split("|");
+        for (var j = 0; j < c.length; j++) {
+            if (sensitiveCategories.indexOf(c[j]) > -1) {
+                is_sensitive = true;
+            }
+        }
+    } else {
+        if (sensitiveCategories.indexOf(category) > -1) {
+            is_sensitive = true;
+        }
+    }
+    return is_sensitive;
+}
+
+function isSensitiveTag(row) {
+    if ('evidence_tags' in row) {
+        if (row['evidence_tags'].toLowerCase().indexOf('inside') > -1 || row['evidence_tags'].toLowerCase().indexOf('private') > -1) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+function showButton(row) {
+
+    if (row['flag_y_n'] == 'Y') {
+        return "<td>Video intentionally withheld per body worn video flagging policy</td>";
+    } else if (flaggedCases.indexOf(row['id_external']) > -1) {
+        return "<td>Video intentionally withheld per body worn video flagging policy (failsafe: video not flagged but others for this case were)</td>";
+    } else if (isSensitive(row['categories'])) {
+        return "<td>Video intentionally withheld per body worn video flagging policy (failsafe: video not flagged but it's in a sensitive category)</td>";
+    } else if (isSensitiveTag(row)) {
+        return "<td>Video intentionally withheld per body worn video flagging policy (failsafe: video not flagged but an evidence tag incidates it should be)</td>";
+    } else if ('youtube_id' in row) {
+        return '<td><input type="button" value="Play the video" class="play" data-youtube-id="' + row['youtube_id'] + '" /></td>';
+    } else {
+        return '<td>Technical glitch: video wasn\'t published to Youtube properly. You can <a href="https://www.youtube.com/results?search_query=' + row['evidence_id'] + '" target="_new">try a Youtube search</a></td>';
+    }
+}
+
+function showCategory(category) {
+    console.log('Showing category '+category);
+    $('#videos td').not('.videos').remove();
+    $('#status').show();
+    $('#videos').hide();
+    $.get('https://data.seattle.gov/resource/y2d4-ftqb.json?$where=categories like \'%25' + category + '%25\'&$order=created_date_record_start DESC&$select=owner_badge_id,owner_last_name,owner_first_name,youtube_id,created_date_record_start,id_external,categories,evidence_tags,flag_y_n,evidence_id', function(data) {
+        $('.header').html('<th></th><th>Officer ID</th><th>Last name</th><th>First name</th><th>Datetime started</th><th>Event number</th><th>Categories</th><th>Tags</th><th>Flagged</th>');
+        for (var i = 0; i < data.length; i++) {
+            var row = data[i];
+            var html = '<tr>';
+            html += showButton(row);
+            var columns = ['owner_badge_id', 'owner_last_name', 'owner_first_name', 'created_date_record_start', 'id_external', 'categories', 'evidence_tags', 'flag_y_n'];
+            for (var j = 0; j < columns.length; j++) {
+                var cell = row[columns[j]];
+                if (cell == undefined) {
+                    html += '<td></td>';
+                } else {
+                    if (j == 1 || j == 2) {
+                        html += '<td>' + toTitleCase(cell) + '</td>';
+                    } else if (j == 4) {
+                        html += '<td><a href="" class="event_number">' + cell + '</a></td>';
+                    } else {
+
+                        html += '<td>' + cell + '</td>';
+                    }
+                }
+            }
+
+
+            html += '</tr>';
+            html += '<tr class="video"><td colspan="9"></td></tr>';
+            $('#videos').append(html);
+            $('#videos').show();
+            $('#status').hide();
+        }
+
+        //$('#data').html(JSON.stringify(data));
+    });
+}
+
+function showEvent(eventNumber) {
+    $('#videos td').not('.videos').remove();
+    $('#status').show();
+    $('#videos').hide();
+    $.get('https://data.seattle.gov/resource/y2d4-ftqb.json?$where=id_external in(\'' + eventNumber + '\',\'' + window.goNumberConversion[eventNumber.replace('-', '')] + '\',\'' + removeZeros(eventNumber) + '\')&$order=created_date_record_start DESC&$select=owner_badge_id,owner_last_name,owner_first_name,youtube_id,created_date_record_start,id_external,categories,evidence_tags,flag_y_n', function(data) {
+        $('.header').html('<th></th><th>Officer ID</th><th>Last name</th><th>First name</th><th>Datetime started</th><th>Event number</th><th>Categories</th><th>Tags</th><th>Flagged</th>');
+        for (var i = 0; i < data.length; i++) {
+            var row = data[i];
+            var html = '<tr>';
+            html += showButton(row);
+            var columns = ['owner_badge_id', 'owner_last_name', 'owner_first_name', 'created_date_record_start', 'id_external', 'categories', 'evidence_tags', 'flag_y_n'];
+            for (var j = 0; j < columns.length; j++) {
+                var cell = row[columns[j]];
+                if (cell == undefined) {
+                    html += '<td></td>';
+                } else {
+                    if (j == 1 || j == 2) {
+                        html += '<td>' + toTitleCase(cell) + '</td>';
+                    } else if (j == 4) {
+                        html += '<td><a href="" class="event_number">' + cell + '</a></td>';
+                    } else {
+
+                        html += '<td>' + cell + '</td>';
+                    }
+                }
+            }
+
+
+            html += '</tr>';
+            html += '<tr class="video"><td colspan="9"></td></tr>';
+            $('#videos').append(html);
+            $('#videos').show();
+            $('#status').hide();
+        }
+
+        //$('#data').html(JSON.stringify(data));
+    });
+}
+String.prototype.repeat = function(num) {
+    return new Array(num + 1).join(this);
+}
+
+function removeZeros(goNumber) {
+    if (goNumber.indexOf('-') > -1) {
+        var parts = goNumber.split("-");
+        if (parts[0].length != 4) {
+            parts[0] = '20' + parts[0];
+        }
+        for (var j = 0; j < parts[1].length; j++) {
+            if (parts[1][0] == '0') {
+                parts[1] = parts[1].slice(1);
+                //console.log(parts[1]);
+            } else {
+                break;
+            }
+        }
+        return parts[0] + '-' + parts[1];
+    } else {
+        return goNumber;
+    }
+}
+$(function() {
+    $('.container').not('nav .container').hide();
+    if (window.location.hash) {
         var theHash = window.location.hash.slice(1);
         selectContainer(theHash);
-      } else {
+    } else {
         var defaultContainerName = 'home';
         selectContainer(defaultContainerName);
-      }
-      $("a[href^='#']").click(function(e) {
+    }
+    $("a[href^='#']").click(function(e) {
         var containerName = $(this).attr('href').slice(1);
         selectContainer(containerName);
-  
-      });
-      $('#request_an_account').click(function() {
-        
-        $.post('/submit_request_for_account/', {'agency_email': $('#agency_email').val()}, function(data) {
-          $('#account_request_msg').html(data['msg']);
-        });
-      });
-      $('#login').click(function() {
-        $.post('/login/', {'username': $('#username').val(), 'password': $('#password').val()}, function(data) {
-          $('#login_msg').html(data['msg']);
-        });
-      });
+
     });
+    $('#request_an_account').click(function() {
+
+        $.post('/submit_request_for_account/', {
+            'agency_email': $('#agency_email').val()
+        }, function(data) {
+            $('#account_request_msg').html(data['msg']);
+        });
+    });
+    $('#login').click(function() {
+        $.post('/login/', {
+            'username': $('#username').val(),
+            'password': $('#password').val()
+        }, function(data) {
+            $('#login_msg').html(data['msg']);
+        });
+    });
+
+    
+    $.get('https://data.seattle.gov/resource/ktpa-re45.json?$select=go_number&$limit=50000', function(data) {
+        window.narrative_go_numbers = [];
+        for (var i = 0; i < data.length; i++) {
+            window.narrative_go_numbers.push(data[i]['go_number']);
+        }
+        //console.log(window.narrative_go_numbers);
+    });
+    $.get('https://data.seattle.gov/resource/y2d4-ftqb.json?flag_y_n=Y&$select=id_external&$group=id_external&$where=id_external%20IS%20NOT%20NULL', function(data) {
+        window.flaggedCases = [];
+        for (var i = 0; i < data.length; i++) {
+            window.flaggedCases.push(data[i]['id_external']);
+        }
+    });
+    // Construct the catalog query string
+    url = 'http://data.ct.gov/resource/9k2y-kqxn.json?organization_type=Public%20School%20Districts&$$app_token=CGxaHQoQlgQSev4zyUh5aR5J3';
+    cad();
+    $.get('https://data.seattle.gov/resource/y2d4-ftqb.json?$group=categories&$select=categories&$where=categories%20IS%20NOT%20NULL', function(data) {
+        var categories = [];
+        for (var i = 0; i < data.length; i++) {
+            var row = data[i]['categories'];
+            if (row.indexOf('|') > -1) {
+                var c = row.split("|");
+                for (var j = 0; j < c.length; j++) {
+                    if (categories.indexOf(c[j]) == -1) {
+                        categories.push(c[j]);
+                    }
+                }
+            } else {
+                if (categories.indexOf(row) == -1) {
+                    categories.push(row);
+                }
+            }
+        }
+        categories = categories.sort();
+        for (var i = 0; i < categories.length; i++) {
+            $('#categories').append('<option>' + categories[i] + '</option>');
+        }
+    });
+    $.get('https://data.seattle.gov/resource/n6as-h2bj.json?$select=owner_last_name,owner_first_name,owner_badge_id&$group=owner_last_name,owner_first_name,owner_badge_id&$order=owner_last_name', function(data) {
+        for (var i = 0; i < data.length; i++) {
+            var row = data[i];
+            var badge_id = row['owner_badge_id'];
+            var name = toTitleCase(row['owner_last_name']) + ', ' + toTitleCase(row['owner_first_name']) + ' (' + badge_id + ')';
+            if (badge_id !== undefined) {
+                $('#employees_who_recorded_videos').append('<option value="' + badge_id + '">' + name + '</option>');
+            }
+        }
+    });
+    $('body').on('change', '#categories', function(e) {
+        console.log('show categories');
+        showCategory($(this).find(':selected').text());
+    });
+    $('body').on('change', '#opa_cases', function(e) {
+        showEvent($(this).find(':selected').val());
+    });
+    $('body').on('change', '#employees_who_recorded_videos', function(e) {
+        var badge_id = this.value;
+        $('#videos td').not('.videos').remove();
+        $('#status').show();
+        $('#videos').hide();
+        $('.header').html('<th></th><th>Datetime started</th><th>Event number</th><th>Categories</th><th>Tags</th><th>Flagged</th>');
+        $.get('https://data.seattle.gov/resource/n6as-h2bj.json?owner_badge_id=' + badge_id + '&$order=created_date_record_start DESC&$select=youtube_id,created_date_record_start,id_external,categories,evidence_tags,flag_y_n', function(data) {
+            for (var i = 0; i < data.length; i++) {
+                var row = data[i];
+                var html = '<tr>';
+                html += showButton(row);
+                var columns = ['created_date_record_start', 'id_external', 'categories', 'evidence_tags', 'flag_y_n'];
+                for (var j = 0; j < columns.length; j++) {
+                    var cell = row[columns[j]];
+                    if (cell == undefined) {
+                        html += '<td></td>';
+                    } else {
+                        if (j == 1) {
+                            html += '<td><a href="" class="event_number">' + cell + '</a></td>';
+                        } else {
+
+                            html += '<td>' + cell + '</td>';
+                        }
+                    }
+                }
+
+
+                html += '</tr>';
+                html += '<tr class="video"><td colspan="6"></td></tr>';
+                $('#videos').append(html);
+                $('#videos').show();
+                $('#status').hide();
+            }
+
+            //$('#data').html(JSON.stringify(data));
+        });
+    });
+    $('body').on('click', '.play', function(e) {
+        var videoHtml = '<iframe width="420" height="315" src="https://www.youtube.com/embed/' + $(this).attr('data-youtube-id') + '?autoplay=1" frameborder="0" allowfullscreen></iframe>';
+        $('.video').hide();
+        $(this).parent().parent().next().show();
+        $(this).parent().parent().next().find('td').html(videoHtml);
+    });
+    $('body').on('click', '.event_number', function(e) {
+        showEvent($(this).text());
+        e.preventDefault();
+    });
+    $('body').on('click', '.map_show_videos', function(e) {
+        var en = $(this).attr('data-event-number');
+        showEvent(en);
+    });
+    $('body').on('click', '#event_number_go', function(e) {
+        showEvent($('#event_number').val());
+    });
+    $("#event_number").keyup(function(event) {
+        if (event.keyCode == 13) {
+            showEvent($('#event_number').val());
+        }
+    });
+    $("input[name=maptype]:radio").change(function() {
+        //alert($(this).val());
+        eval($(this).val())();
+    });
+});
     </script>
+    
     <style>
     body {
   padding-top: 50px;
@@ -55,14 +975,14 @@ color:red;
 #login_table th {
 padding-right:20px;
 }
-#videos {
+#meeting_videos {
 float:left;
 border-right:1px solid blue; 
 padding:0 40px 0 0;
 margin:0 20px 20px 0;
 width:480px;
 }
-#videos h3 {
+#meeting_videos h3 {
 margin-top:0;
 }
 h2 span {
@@ -91,6 +1011,23 @@ height:157px;
 margin:0 0 10px 10px;
 float:right;
 }
+#narrative {height:480px; overflow-y:scroll;}
+
+#status,#videos {
+    display:none;
+}
+th, td {
+    border:1px solid #000;
+    padding:5px;
+    text-align:left;
+    vertical-align:top;
+}
+.video {
+    display:none;
+}
+#map { height: 480px; width: 640px; margin-right:10px; }
+     #narrative {height:480px; overflow-y:scroll;}
+
     </style>
 </head>
 <body>
@@ -138,7 +1075,7 @@ float:right;
         <a href="https://aws.amazon.com/">Amazon Web Services</a> or <a href="https://azure.microsoft.com/en-us/">Microsoft Azure</a>
         cloud accounts at no extra charge by emailing <a href="mailto:timothy.clemans@seattle.gov">timothy.clemans@seattle.gov</a>.
         For agencies not comfortable with the cloud the software can be installed on computers they own.</p>
-        <div id="videos"><h3>Videos from the department's June 2015 national meeting <em>Public Access to Footage: Balancing Transparency and Privacy</em></h2>
+        <div id="meeting_videos"><h3>Videos from the department's June 2015 national meeting <em>Public Access to Footage: Balancing Transparency and Privacy</em></h2>
         <script height="270px" width="480px" src="http://player.ooyala.com/iframe.js#ec=IxOHh0dTqZNsC3LGVnsbsKgmS3wOkuNu&pbid=c8cff4cec9d94ae0896f6443af7ee837"></script>
         <iframe src="http://www.seattlechannel.org/embedvideoplayer?videoid=x56544" frameborder="0" scrolling="no"
         style="height: 270px; width: 480px; margin-below:20px;" ></iframe>
@@ -196,7 +1133,7 @@ able to save us a lot of time by telling us not only the video they want but the
 The strategy was immediately proven effective
 when the news outlet that sued us made a request for just 48 minutes of footage out of three hundred minutes footage recorded at the May Day riot
  after viewing the automatically
-over-redacted videos on our Youtube channel. Clemans went on to develop software vital to our new Realtime Crime Center alerting its staff to important dispatch messages using keywords.</p>
+over-redacted videos on our Youtube channel. Clemans went on to develop software vital to our new Realtime Crime Center //alerting its staff to important dispatch messages using keywords.</p>
 <p>With transparency vs privacy becoming the number one roadblock for implementing body worn video we tasked Clemans this September with making the software
 available for any law enforcement agency to use as easily and inexpensively as possible. Our partners at Amazon and Microsoft are providing us
 with cloud storage and computing to make this happen. Our code is open source so anyone can use it on their own machines as well as improve it.
@@ -219,6 +1156,30 @@ The Seattle Police Department's strategy of looking outward to find solutions ma
       <li><strong>Backchannel:</strong> <a href="https://medium.com/backchannel/the-body-cam-hacker-who-schooled-the-police-c046ff7f6f13">The Body Cam Hacker Who Schooled the Police:
 This activist demanded millions of surveillance videos from the Seattle police. They handed him the data and a job.</a></li>
       <li><strong>Associated Press:</strong> <a href="https://www.yahoo.com/tech/s/police-body-cameras-may-solve-one-problem-create-071407719--politics.html"></a></li>
+      </ul>
+    </div>
+    <div id="video_library_container" class="container">
+    <h2>Seattle Police Video Library</h2>
+    <div>
+<input type="radio" name="maptype" value="cad" checked> CAD 
+<input type="radio" name="maptype" value="rms"> RMS 
+<input type="radio" name="maptype" value="rms_with_narrative"> RMS with narrative online
+</div>
+  <div id="map" style="float:left;"></div>
+  <div id="narrative"></div>
+  <div id="clear:both"></div>
+  <br/>
+<strong>Event number:</strong> <input type="text" id="event_number" /><input type="button" value="Go" id="event_number_go" />
+<strong>Categories:</strong> <select id="categories"><option></option></select>
+<strong>Employees who recorded videos:</strong>
+<select id="employees_who_recorded_videos"><option></option></select>
+<strong>OPA cases:</strong>
+<select id="opa_cases"><option></option></select>
+<h2></h2>
+<div id="status">Loading</div>
+<table id="videos"><tr class="header">
+    <th></th><th>Datetime started</th><th>Event number</th><th>Categories</th><th>Tags</th><th>Flagged</th></tr></table>
+
     </div>
 </body>
 </html>
