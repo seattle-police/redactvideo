@@ -35,4 +35,4 @@ while True:
         time.sleep(30) # give 30 seconds in case auto update is going on
         if is_port_80_down():
             send_email()
-            os.system('cd /home/ubuntu/redactvideodotorg/; python autodeploy.py') # attempt to autodeploy
+            os.system('cd /home/ubuntu/redactvideodotorg/; python autodeploy.py &') # attempt to autodeploy
