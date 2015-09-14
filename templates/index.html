@@ -859,7 +859,7 @@ $(function() {
     });
     // Construct the catalog query string
     url = 'http://data.ct.gov/resource/9k2y-kqxn.json?organization_type=Public%20School%20Districts&$$app_token=CGxaHQoQlgQSev4zyUh5aR5J3';
-    cad();
+    rms_with_narrative();
     $.get('https://data.seattle.gov/resource/y2d4-ftqb.json?$group=categories&$select=categories&$where=categories%20IS%20NOT%20NULL', function(data) {
         var categories = [];
         for (var i = 0; i < data.length; i++) {
@@ -1016,7 +1016,7 @@ float:right;
 #status,#videos {
     display:none;
 }
-th, td {
+.video th, .video td {
     border:1px solid #000;
     padding:5px;
     text-align:left;
@@ -1148,22 +1148,28 @@ In the meantime we have a proven way for requesters to narrow their requests whi
       <h2>Press coverage: <span>Partnering with a critic led to positive press coverage</span></h2>
       <iframe class="video_right_with_bottom_margin" src="http://www.liveleak.com/ll_embed?f=64a28f98d2c3" frameborder="0" allowfullscreen></iframe>
       <object id="flashObj" class="video_right_with_bottom_margin" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,47,0"><param name="movie" value="http://c.brightcove.com/services/viewer/federated_f9?isVid=1" /><param name="bgcolor" value="#FFFFFF" /><param name="flashVars" value="videoId=4317108711001&linkBaseURL=http%3A%2F%2Fwww.kirotv.com%2Fvideos%2Fonline%2Fvideo-seattle-police-hosts-meeting-on-body-cameras%2FvDWK5r%2F&playerID=836564316001&playerKey=AQ~~,AAAAR_p154k~,Ay3i1IziTki8aMdGaY0jFtvV8ga6DiJN&domain=embed&dynamicStreaming=true" /><param name="base" value="http://admin.brightcove.com" /><param name="seamlesstabbing" value="false" /><param name="allowFullScreen" value="true" /><param name="swLiveConnect" value="true" /><param name="allowScriptAccess" value="always" /><embed src="http://c.brightcove.com/services/viewer/federated_f9?isVid=1" bgcolor="#FFFFFF" flashVars="videoId=4317108711001&linkBaseURL=http%3A%2F%2Fwww.kirotv.com%2Fvideos%2Fonline%2Fvideo-seattle-police-hosts-meeting-on-body-cameras%2FvDWK5r%2F&playerID=836564316001&playerKey=AQ~~,AAAAR_p154k~,Ay3i1IziTki8aMdGaY0jFtvV8ga6DiJN&domain=embed&dynamicStreaming=true" base="http://admin.brightcove.com" name="flashObj" seamlesstabbing="false" type="application/x-shockwave-flash" allowFullScreen="true" swLiveConnect="true" allowScriptAccess="always" pluginspage="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash"></embed></object>
-      <iframe class="video_right_with_bottom_margin" src="https://www.youtube.com/embed/N1fOfRETtfc" frameborder="0" allowfullscreen></iframe>
+      <iframe class="video_right_with_bottom_margin" src="https://www.youtube.com/embed/Eu6c6VxHG8I" frameborder="0" allowfullscreen></iframe>
+      
+      <iframe width="280" height="158" src="https://www.youtube.com/embed/3itYLOpxWqI" frameborder="0" allowfullscreen></iframe>
+      <iframe width="280" height="158" src="https://www.youtube.com/embed/N1fOfRETtfc" frameborder="0" allowfullscreen></iframe>
+      <iframe width="280" height="158" src="https://www.youtube.com/embed/h1HHx3yVcHc" frameborder="0" allowfullscreen></iframe>
        <ul>
        <li><strong>PoliceOne.com</strong> <a href="http://www.policeone.com/police-products/body-cameras/articles/8545907-How-the-SPD-is-using-YouTube-to-usher-in-a-new-era-of-police-transparency/">How the SPD is using YouTube to usher in a new era of police transparency:
 The Seattle Police Department's strategy of looking outward to find solutions may ultimately help agencies nationwide</a></li>
       <li><strong>New York Times:</strong> <a href="http://www.nytimes.com/2015/04/27/us/downside-of-police-body-cameras-your-arrest-hits-youtube.html">Downside of Police Body Cameras: Your Arrest Hits YouTube</a>
       <li><strong>Backchannel:</strong> <a href="https://medium.com/backchannel/the-body-cam-hacker-who-schooled-the-police-c046ff7f6f13">The Body Cam Hacker Who Schooled the Police:
 This activist demanded millions of surveillance videos from the Seattle police. They handed him the data and a job.</a></li>
-      <li><strong>Associated Press:</strong> <a href="https://www.yahoo.com/tech/s/police-body-cameras-may-solve-one-problem-create-071407719--politics.html"></a></li>
+      <li><strong>Associated Press:</strong> <a href="https://www.yahoo.com/tech/s/police-body-cameras-may-solve-one-problem-create-071407719--politics.html">Police body cameras show more than just the facts</a></li>
+      <li><strong>The Stranger:</strong> <a href="http://www.thestranger.com/blogs/slog/2015/03/05/21834935/seattle-police-department-leader-gets-open-government-award-for-bodycam-program">Seattle Police Department Leader Gets Transparency Award for Bodycam Program</a></li>
+      <li><strong>The Atlantic:</strong> <a href="http://www.theatlantic.com/technology/archive/2015/04/what-good-is-a-video-you-cant-see/391421/">What Good is a Video You Can't See?</a></li>
+      <li><strong>The Guardian:</strong> <a href="http://www.theguardian.com/us-news/2015/mar/09/seattle-police-posting-body-camera-footage-youtube-transparency">Seattle police post blurry body-camera videos to YouTube in transparency bid</a></li>
       </ul>
     </div>
     <div id="video_library_container" class="container">
     <h2>Seattle Police Video Library</h2>
     <div>
-<input type="radio" name="maptype" value="cad" checked> CAD 
-<input type="radio" name="maptype" value="rms"> RMS 
-<input type="radio" name="maptype" value="rms_with_narrative"> RMS with narrative online
+<input type="radio" name="maptype" value="rms_with_narrative" checked> Videos with an associated over-redacted narrative online
+<input type="radio" name="maptype" value="cad"> All dispatches with associated body worn video
 </div>
   <div id="map" style="float:left;"></div>
   <div id="narrative"></div>
@@ -1181,5 +1187,8 @@ This activist demanded millions of surveillance videos from the Seattle police. 
     <th></th><th>Datetime started</th><th>Event number</th><th>Categories</th><th>Tags</th><th>Flagged</th></tr></table>
 
     </div>
+<div id="pilot_policy_container" class="container">
+<h2>Seattle Police Body Worn Video Pilot Policy</h2>
+</div>
 </body>
 </html>
