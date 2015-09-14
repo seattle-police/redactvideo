@@ -4,23 +4,9 @@ try:
     r.db_create("redactvideodotorg").run()
 except:
     pass
-try:
-    r.db("redactvideodotorg").table_create("accounts_to_verify").run()
-except:
-    pass
-try:
-    r.db("redactvideodotorg").table_create("two_factor_codes").run()
-except:
-    pass
-try:
-    r.db("redactvideodotorg").table_create("settings").run()
-except:
-    pass
-try:
-    r.db("redactvideodotorg").table_create("sessions").run()
-except:
-    pass
-try:
-    r.db("redactvideodotorg").table_create("users").run()
-except:
-    pass
+db = r.db("redactvideodotorg")
+tables_needed = ["accounts_to_verify", "two_factor_codes", "settings", "sessions", "users"]
+existing_tables = db.table_list().run()
+tables_to_create = set(tables_needed) - set(existing_tables) # remove existing tables from what we need
+for table in tables_to_create:
+    db.table_create(table).run()
