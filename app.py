@@ -199,7 +199,7 @@ def login():
     
     if user_data['hash'] != hash:
         return Response(json.dumps({'msg': '<strong>Error:</strong> Either email or password is incorrect'}), mimetype="application/json")
-    if not user_data.get('is_approved'):
+    if not (user_data.get('is_approved') or user_data.get('is_admin')):
         return Response(json.dumps({'msg': "<strong>Error:</strong> Your account hasn't been approved"}), mimetype="application/json")
     two_factor_code = id_generator(60)
     db.table('two_factor_codes').insert({'id': two_factor_code, 'userid': request.form['username']}).run(conn)
