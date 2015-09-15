@@ -90,7 +90,7 @@ def index():
         rs = bucket.list(user_id)
 
         context['videos'] = [key.name[key.name.index('/')+1:] for key in rs]
-        context['has_authed_with_youtube'] = True if user_data.get('youtube_token') else False
+        context['has_authed_with_youtube'] = True if user_data.get('youtube_refresh_token') else False
         context['is_admin'] = user_data['is_admin']
         context['google_client_id'] = get_setting('google_client_id')
         if user_data['is_admin']:
