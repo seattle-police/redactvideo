@@ -330,6 +330,8 @@ def autoupdate():
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
     print request.form
+    with open('/home/ubuntu/%s.txt' % (id_generator()), 'w') as f:
+        f.write(str(request.form))
     return Response('')
     
 @socketio.on('my event', namespace='/test')
