@@ -18,6 +18,7 @@ print conn
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import os,sys
+import requests
 
 def get_setting(setting):
     try:
@@ -327,15 +328,82 @@ def autoupdate():
     if hmac.compare_digest(str(github_signature), 'sha1='+hmac_object.hexdigest()):
         os.system('python autodeploy.py &')
     return Response('')
-        
+
+def upload_to_s3(filepath, userid):
+    import math, os
+    import boto
+    from filechunkio import FileChunkIO
+
+    b = bucket
+
+    # Get file info
+    source_path = filepath
+    source_size = os.stat(source_path).st_size
+
+    # Create a multipart upload request
+    mp = b.initiate_multipart_upload(userid+'/'+os.path.basename(source_path))
+
+    # Use a chunk size of 50 MiB (feel free to change this)
+    chunk_size = 52428800
+    chunk_count = int(math.ceil(source_size / float(chunk_size)))
+
+    # Send the file parts, using FileChunkIO to create a file-like object
+    # that points to a certain byte range within the original file. We
+    # set bytes to never exceed the original file size.
+    for i in range(chunk_count):
+        offset = chunk_size * i
+        bytes = min(chunk_size, source_size - offset)
+        with FileChunkIO(source_path, 'r', offset=offset,
+                             bytes=bytes) as fp:
+            mp.upload_part_from_file(fp, part_num=i + 1)
+
+    # Finish the upload
+    mp.complete_upload()
+    
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
-    print request.form
-    m = re.search('download]\<(?P<link>.*)\>', request.form['html'])
-    if m:
-        print m.group(0)
-    with open('/home/ubuntu/%s.txt' % (id_generator()), 'w') as f:
-        f.write(str(request.form))
+    # parse the to email address
+    m = re.search('"(?P<email>.*)"', request.form['to'])
+    email = m.group('email')
+    if not email.endswith('@redactvideo.org'):
+        return Response('error')
+    userto = email.split('@')[0]
+    users_random_id = userto[:userto.index('_')]
+    userid = db.table('random_ids_for_users').get(users_random_id).run(conn)['userid']
+    
+    # download the evidence.com html with the url to download the zip file
+    m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', request.form['text'])
+    r = requests.get(m.group(0))
+    base_url = m.group('base')
+    download_html = r.text
+    m = re.search('download_url="(?P<url>.*ver=v2)', download_html)
+    zip_download_url = base_url+m.group('url').replace('&amp;', '&')
+    print zip_download_url
+    # save the zip file
+    zips_id = id_generator()
+    with open('/home/ubuntu/temp_videos/'+zips_id+'.zip', 'wb') as handle:
+        response = requests.get(zip_download_url, stream=True)
+
+        if not response.ok:
+            pass
+
+        for block in response.iter_content(1024):
+            handle.write(block)
+    # unzip the file
+    os.system('cd /home/ubuntu/temp_videos/; mkdir zips_id; unzip -d %s -j %s.zip' % (zips_id, zips_id))
+    # now need to know what to do with the files
+    # e.g. put on S3 or on Youtube
+    if '_just_copy_over' in email:
+        for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
+            if not video.endswith('pdf'):
+                upload_to_s3('/home/ubuntu/temp_videos/'+zips_id+'/'+video, userid)
+    else:
+        youtube_token = db.table('users').get(userid).run(conn)['youtube_token']
+        
+        for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
+            if not video.endswith('pdf'):
+                upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/'+video, youtube_token)
+    os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     return Response('')
     
 @socketio.on('my event', namespace='/test')
