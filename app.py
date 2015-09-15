@@ -48,7 +48,15 @@ def is_logged_in(request):
     else:
         return False
  
-        
+def get_users_random_id(userid):
+    results = list(db.table('random_ids_for_users').filter({'userid': userid}).run(conn))
+    if results:
+        return results[0]['id']
+    else:
+        random_id = id_generator()
+        db.table('random_ids_for_users').insert({'id': random_id, 'userid': userid}).run(conn)
+        return random_id
+ 
 @app.route('/')
 def index():
     context = {}
@@ -57,6 +65,7 @@ def index():
         
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         context['userid'] = user_id
+        context['users_random_id'] = get_users_random_id(user_id)
         print user_id
         user_data = db.table('users').get(user_id).run(conn)
         import base64
