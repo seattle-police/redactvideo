@@ -195,15 +195,15 @@ width:150px;
       <h3>Youtube connection</h3>
       <p>{% if has_authed_with_youtube %}
       <a href="https://accounts.google.com/o/oauth2/auth?
-client_id={{ google_client_id }}&approval_prompt=force&
+client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
 redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
 scope=https://www.googleapis.com/auth/youtube.upload&
-response_type=token" target="_blank">Click here</a> to reauthenticate with Youtube.
+response_type=code" target="_blank">Click here</a> to reauthenticate with Youtube.
       {% else %}<a href="https://accounts.google.com/o/oauth2/auth?
-client_id={{ google_client_id }}&approval_prompt=force&
+client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
 redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
 scope=https://www.googleapis.com/auth/youtube.upload&
-response_type=token" target="_blank">Click here</a> to authenticate with Youtube.{% endif %}</p>
+response_type=code" target="_blank">Click here</a> to authenticate with Youtube.{% endif %}</p>
     </div>
     <div id="do_bulk_over_blur_container" class="container main">
       <h2>Do bulk over-blur</h2>

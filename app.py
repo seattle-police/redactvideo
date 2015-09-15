@@ -106,20 +106,31 @@ def index():
     else:
         return render_template('index.html')
 
-@app.route('/youtube_oauth_callback/') 
+@app.route('/youtube_oauth_callback/', methods=['GET']) 
 def youtube_oauth_callback():
-    return render_template("youtube_callback.html")        
-    
-@app.route('/save_youtube_oauth_data/') 
-def save_youtube_oauth_data():
+    code = request.args['code']
+    t = requests.post(
+    'https://accounts.google.com/o/oauth2/token',
+    data={'code': code, 'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'redirect_uri': 'http://redactvideo.org/youtube_oauth_callback/', 'grant_type': 'authorization_code'})
+    data = t.json()
     user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
-    db.table('users').get(user_id).update({'youtube_token': request.args['token'][:request.args['token'].index('&')]}).run(conn)
-    return Response('worked')
+    db.table('users').get(user_id).update({'youtube_token': data['access_token'], 'youtube_refresh_token': data['refresh_token']}).run(conn)
 
+    
+    return render_template("youtube_callback.html")        
+
+def get_users_youtube_token(user_id):    
+    youtube_refresh_token = db.table('users').get(user_id).run(conn)['youtube_refresh_token']
+    t = requests.post(
+    'https://accounts.google.com/o/oauth2/token',
+    data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'refresh_token': youtube_refresh_token, 'grant_type': 'refresh_token'})
+    data = t.json()
+    print data
+    
 @app.route('/overblur_and_publish_all_videos/')
 def overblur_and_publish_all_videos():
     user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
-    youtube_token = db.table('users').get(user_id).run(conn)['youtube_token']
+    youtube_token = get_users_youtube_token(user_id)
     for key in bucket.list(user_id):
         random_filename = id_generator()+'.mp4'
         key.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (random_filename))
@@ -398,8 +409,12 @@ def incoming_email():
             if not video.endswith('pdf'):
                 upload_to_s3('/home/ubuntu/temp_videos/'+zips_id+'/'+video, userid)
     else:
-        youtube_token = db.table('users').get(userid).run(conn)['youtube_token']
-        
+        youtube_refresh_token = db.table('users').get(userid).run(conn)['youtube_refresh_token']
+        t = requests.post(
+        'https://accounts.google.com/o/oauth2/token',
+        data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'grant_type': 'refresh_token'})
+        data = t.json()
+        youtube_token = get_users_youtube_token(userid)
         for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
             if not video.endswith('pdf'):
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/'+video, youtube_token)
