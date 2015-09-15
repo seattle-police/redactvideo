@@ -1,6 +1,7 @@
 from flask import Flask, Response, request, redirect, render_template, make_response
 from flask.ext.socketio import SocketIO, emit
 import rethinkdb as r
+import re
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -330,6 +331,9 @@ def autoupdate():
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
     print request.form
+    m = re.search('download]\<(?P<link>.*)\>', request.form['html'])
+    if m:
+        print m.group(0)
     with open('/home/ubuntu/%s.txt' % (id_generator()), 'w') as f:
         f.write(str(request.form))
     return Response('')
