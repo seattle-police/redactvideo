@@ -246,13 +246,6 @@ def confirm_two_factor():
     resp = make_response(redirect('/'))
     resp.set_cookie('session', session_id)
     return resp
-
-def is_valid_email(email):
-    from email.utils import parseaddr
-    parsed = parseaddr(email)
-    if parsed[0] and parsed[1]:
-        return True
-    return False
     
 def is_already_account(email):
     if list(db.table('users').filter({'id': email}).run(conn)):
@@ -280,18 +273,17 @@ def submit_request_for_account():
             print status, msg
             secret_code = id_generator(60)
             if agency_email.endswith('.gov'):
-                db.table('accounts_to_verify').insert({'id': secret_code, 'userid': agency_email}, conflict='update').run(conn)
-                message = sendgrid.Mail()
-                message.add_to(agency_email)
-                message.set_subject('Confirm account for RedactVideo')
-                message.set_html('<a href="http://redactvideo.org/confirm_account/?code=%s">Click here</a> to confirm your account.' % (secret_code))
-                message.set_from('no-reply@redactvideo.org')
-                sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
-                status, msg = sg.send(message)
                 approved = True
             else:
                 approved = None # None instead of False so we can tell when admin has made decision
-            
+            db.table('accounts_to_verify').insert({'id': secret_code, 'userid': agency_email}, conflict='update').run(conn)
+            message = sendgrid.Mail()
+            message.add_to(agency_email)
+            message.set_subject('Confirm account for RedactVideo')
+            message.set_html('<a href="http://redactvideo.org/confirm_account/?code=%s">Click here</a> to confirm your account.' % (secret_code))
+            message.set_from('no-reply@redactvideo.org')
+            sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
+            status, msg = sg.send(message)
             db.table('users').insert({'id': agency_email, 'is_admin': False, 'verified': False, 'approved': approved}).run(conn)    
             return Response(json.dumps({'success': True, 'msg': "An email has been sent. Please click on the link in it to confirm your email."}), mimetype="application/json")
     else:
