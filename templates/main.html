@@ -36,7 +36,7 @@
           $('#request_account_form').text("Request sent. You'll receive an email when your account is created.");
         });
       });
-      $("a[href^='#']").click(function(e) {
+      $("nav a[href^='#']").click(function(e) {
         var containerName = $(this).attr('href').slice(1);
         selectContainer(containerName);
   
@@ -74,7 +74,19 @@
       Dropzone.options.dropzone = {
         maxFilesize: 5000
       }
+      $('#list_of_videos a').click(function(e) {
+        userid = "{{ userid }}";
+        
+        url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+userid+'/'+$(this).attr('href').slice(1);
+        html = '<video width="640" height="480" controls>';
+        html += '  <source src="'+url+'" type=\'video/mp4; codecs="avc1.42E01E, mp4a.40.2"\'>';
+        html += 'Your browser does not support the video tag.';
+        html += '</video>';
+        $('#video_player_for_manage_videos').html(html);
+        e.preventDefault();
+      });
     });
+    
     </script>
     <style>
     body {
@@ -100,6 +112,12 @@ color:red;
 }
 input[type=text] {
 width:150px;
+}
+#video_player_for_manage_videos {
+float:right;
+border:1px solid #000;
+width:640px;
+height:480px;
 }
     </style>
 </head>
@@ -183,9 +201,12 @@ width:150px;
     
     <div id="manage_videos_container" class="container main">
       <h2>Manage videos</h2>
-      <table><tr><th>Filename</th></tr>
+      <div id="video_player_for_manage_videos">
+      
+      </div>
+      <table id="list_of_videos"><tr><th>Filename</th></tr>
       {% for video in videos %}
-      <tr><td>{{ video }}</td></tr>
+      <tr><td><a href="#{{ video }}">{{ video }}</a></td></tr>
       {% endfor %}
       </table>
       

@@ -88,7 +88,7 @@ def index():
         
 
         rs = bucket.list(user_id)
-
+       
         context['videos'] = [key.name[key.name.index('/')+1:] for key in rs]
         context['has_authed_with_youtube'] = True if user_data.get('youtube_refresh_token') else False
         context['is_admin'] = user_data['is_admin']
@@ -106,6 +106,22 @@ def index():
     else:
         return render_template('index.html')
 
+@app.route('/convert_every_video_to_h264/', methods=['GET'])         
+def convert_every_video_to_h264():
+    userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
+    rs = bucket.list(userid)
+    videos = [key for key in rs]        
+    for video in videos:
+        filename = video.name[video.name.index('/')+1:]
+        video.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (filename))
+        os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s" -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/converted_%s.mp4"' % (filename, filename[:-4]))
+        os.system('rm "/home/ubuntu/temp_videos/%s"' % (filename))
+        os.system('mv "/home/ubuntu/temp_videos/converted_%s.mp4" "/home/ubuntu/temp_videos/%s.mp4"' % (filename[:-4], filename[:-4]))
+        
+        upload_to_s3('/home/ubuntu/temp_videos/%s.mp4' % (filename[:-4]), userid)
+        os.system('rm "/home/ubuntu/temp_videos/%s"' % (filename))
+    return Response('')
+        
 @app.route('/youtube_oauth_callback/', methods=['GET']) 
 def youtube_oauth_callback():
     code = request.args['code']
@@ -256,7 +272,7 @@ def is_already_account(email):
 @app.route('/submit_request_for_account/', methods=['POST'])
 def submit_request_for_account():
     from validate_email import validate_email
-    if validate_email(request.form['agency_email'], check_mx=True):
+    if validate_email(request.form['agency_email'], check_mx=True): # verify=True didn't work
         if is_already_account(request.form['agency_email']):
             return Response(json.dumps({'success': False, 'msg': '<strong class="error">Error:</strong> That email is already in the system'}), mimetype="application/json")
         else:
