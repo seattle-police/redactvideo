@@ -89,11 +89,16 @@ function pad(n, width, z) {
         html += '</video>';
         
         $('#video_player_for_manage_videos').html(html);
-        for (var i=1;i<120;i++) {
+        
+        setTimeout(function() {
+        for (var i=1;i<($('#video_player').get(0).duration/30);i++) {
             //$('#video_player_for_manage_videos').append('<img class="thumb" src="https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+hash+'/'+pad(i, 3)+'.jpg" />');
             $('#video_player_for_manage_videos').append('<div class="thumb" onclick=\'$("#video_player").get(0).currentTime = '+(i*30-30)+';$("#video_player").get(0).play();$("body").scrollTop("#video_player");\' style="background-image:url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+hash+'/'+pad(i, 3)+'.jpg)" type="image/jpeg"></div>');
         
         }
+        
+        
+        },1000);
         e.preventDefault();
       });
     });
