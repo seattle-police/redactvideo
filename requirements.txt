@@ -1,3 +1,5 @@
 sendgrid
 boto
 google-api-python-client
+validate_email
+pyDNS

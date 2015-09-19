@@ -262,7 +262,8 @@ def is_already_account(email):
     
 @app.route('/submit_request_for_account/', methods=['POST'])
 def submit_request_for_account():
-    if is_valid_email(request.form['agency_email']):
+    from validate_email import validate_email
+    if validate_email(request.form['agency_email'], verify=True):
         if is_already_account(request.form['agency_email']):
             return Response(json.dumps({'success': False, 'msg': '<strong class="error">Error:</strong> That email is already in the system'}), mimetype="application/json")
         else:
@@ -421,22 +422,7 @@ def incoming_email():
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     return Response('')
     
-@socketio.on('my event', namespace='/test')
-def test_message(message):
-    emit('my response', {'data': message['data']})
 
-@socketio.on('my broadcast event', namespace='/test')
-def test_message(message):
-    emit('my response', {'data': message['data']}, broadcast=True)
-
-@socketio.on('connect', namespace='/test')
-def test_connect():
-    print 
-    emit('my response', {'data': 'Connected'})
-
-@socketio.on('disconnect', namespace='/test')
-def test_disconnect():
-    print('Client disconnected')
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
