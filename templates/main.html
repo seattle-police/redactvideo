@@ -167,6 +167,7 @@ height:480px;
 
     <div id="upload_videos_container" class="container main">
     <h2>Upload videos</h2>
+    <p><strong>Note:</strong> Videos are converted to the H.264 video format. This way they can be played back in the browser without using Adobe Flash.</p>
       <h3>Upload from your computer</h3>
       <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
         <input type="hidden" name="key" value="{{ userid }}/${filename}">

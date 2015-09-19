@@ -109,17 +109,19 @@ def index():
 @app.route('/convert_every_video_to_h264/', methods=['GET'])         
 def convert_every_video_to_h264():
     userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
-    rs = bucket.list(userid)
-    videos = [key for key in rs]        
-    for video in videos:
+    for video in bucket.list(userid):
+        
+        print video, video.name
         filename = video.name[video.name.index('/')+1:]
+        if not filename:
+            continue
         video.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (filename))
         os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s" -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/converted_%s.mp4"' % (filename, filename[:-4]))
         os.system('rm "/home/ubuntu/temp_videos/%s"' % (filename))
         os.system('mv "/home/ubuntu/temp_videos/converted_%s.mp4" "/home/ubuntu/temp_videos/%s.mp4"' % (filename[:-4], filename[:-4]))
         
         upload_to_s3('/home/ubuntu/temp_videos/%s.mp4' % (filename[:-4]), userid)
-        os.system('rm "/home/ubuntu/temp_videos/%s"' % (filename))
+        os.system('rm "/home/ubuntu/temp_videos/%s.mp4"' % (filename[:-4]))
     return Response('')
         
 @app.route('/youtube_oauth_callback/', methods=['GET']) 
