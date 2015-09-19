@@ -263,7 +263,7 @@ def is_already_account(email):
 @app.route('/submit_request_for_account/', methods=['POST'])
 def submit_request_for_account():
     from validate_email import validate_email
-    if validate_email(request.form['agency_email'], verify=True):
+    if validate_email(request.form['agency_email'], check_mx=True):
         if is_already_account(request.form['agency_email']):
             return Response(json.dumps({'success': False, 'msg': '<strong class="error">Error:</strong> That email is already in the system'}), mimetype="application/json")
         else:
