@@ -89,7 +89,7 @@ def index():
 
         rs = bucket.list(user_id)
        
-        context['videos'] = [key.name[key.name.index('/')+1:] for key in rs]
+        context['videos'] = [{'name': key.name[key.name.index('/')+1:], 'hash': get_md5(key.name)} for key in rs]
         context['has_authed_with_youtube'] = True if user_data.get('youtube_refresh_token') else False
         context['is_admin'] = user_data['is_admin']
         context['google_client_id'] = get_setting('google_client_id')
@@ -123,7 +123,31 @@ def convert_every_video_to_h264():
         upload_to_s3('/home/ubuntu/temp_videos/%s.mp4' % (filename[:-4]), userid)
         os.system('rm "/home/ubuntu/temp_videos/%s.mp4"' % (filename[:-4]))
     return Response('')
+
+def get_md5(thestr):
+    import hashlib
+    m = hashlib.md5()
+    m.update(thestr)
+    return m.hexdigest()    
+    
+@app.route('/generate_thumbs_for_every_video/', methods=['GET'])         
+def generate_thumbs_for_every_video():
+    from utils.video import put_folder_on_s3
+    userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
+    for video in bucket.list(userid):
         
+        print video, video.name
+        filename = video.name[video.name.index('/')+1:]
+        if not filename:
+            continue
+        video.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (filename))
+        hash = get_md5(video.name)
+        os.system('mkdir /home/ubuntu/temp_videos/%s/' % (hash))
+        os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s" -vf fps=1/30 /home/ubuntu/temp_videos/%s/%%03d.jpg' % (filename, hash))
+        put_folder_on_s3('/home/ubuntu/temp_videos/%s/' % (hash), hash, get_setting('bucket_name'), get_setting('access_key_id'), get_setting('secret_access_key'))
+        os.system('rm -rf /home/ubuntu/temp_videos/%s/' % (hash))
+    return Response('')
+    
 @app.route('/youtube_oauth_callback/', methods=['GET']) 
 def youtube_oauth_callback():
     code = request.args['code']

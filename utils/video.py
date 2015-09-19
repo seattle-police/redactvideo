@@ -32,8 +32,7 @@ def put_folder_on_s3(source_path, prefix, bucket_name, aws_access_key_id, aws_ac
 
     conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_ACCESS_KEY_SECRET)
 
-    bucket = conn.create_bucket(bucket_name,
-            location=boto.s3.connection.Location.DEFAULT)
+    bucket = conn.get_bucket(bucket_name)
 
 
     uploadFileNames = []
