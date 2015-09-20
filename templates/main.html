@@ -7,6 +7,7 @@
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/cerulean/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.css"/>
+    <script type="text/javascript" src="https://rawgit.com/allensarkisyan/VideoFrame/master/VideoFrame.js"/></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.js"></script>
     <script>
     window.status = {}
@@ -15,6 +16,55 @@ function pad(n, width, z) {
   n = n + '';
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
+function initDraw(canvas) {
+    function setMousePosition(e) {
+        var ev = e || window.event; //Moz || IE
+        if (ev.pageX) { //Moz
+            mouse.x = ev.pageX + window.pageXOffset;
+            mouse.y = ev.pageY + window.pageYOffset;
+        } else if (ev.clientX) { //IE
+            mouse.x = ev.clientX + document.body.scrollLeft;
+            mouse.y = ev.clientY + document.body.scrollTop;
+        }
+    };
+
+    var mouse = {
+        x: 0,
+        y: 0,
+        startX: 0,
+        startY: 0
+    };
+    var element = null;
+
+    canvas.onmousemove = function (e) {
+        setMousePosition();
+        if (element !== null) {
+            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+        }
+    }
+
+    canvas.onclick = function (e) {
+        if (element !== null) {
+            element = null;
+            canvas.style.cursor = "default";
+            console.log("finsihed.");
+        } else {
+            console.log("begun.");
+            mouse.startX = mouse.x;
+            mouse.startY = mouse.y;
+            element = document.createElement('div');
+            element.className = 'rectangle'
+            element.style.left = mouse.x + 'px';
+            element.style.top = mouse.y + 'px';
+            canvas.appendChild(element)
+            canvas.style.cursor = "crosshair";
+        }
+    }
+}
+
     function selectContainer(containerName) {
       // hide all containers except the nav one
       $('.container').not('nav .container').hide();
@@ -83,12 +133,20 @@ function pad(n, width, z) {
         userid = "{{ userid }}";
         hash = $(this).attr('data-hash');
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+userid+'/'+$(this).attr('href').slice(1);
-        html = '<video id="video_player" width="640" height="480" controls>';
-        html += '  <source src="'+url+'" type=\'video/mp4; codecs="avc1.42E01E, mp4a.40.2"\'>';
+        html = '<div id="video_player_canvas"></div><video id="video_player" controls>';
+        html += '  <source src="'+url+'">';
         html += 'Your browser does not support the video tag.';
-        html += '</video>';
+        html += '</video>  <div id="controls"><div class="frame"><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /></div>';
         
         $('#video_player_for_manage_videos').html(html);
+        window.currentFrame = $('#currentFrame');
+      window.video = VideoFrame({
+            id : 'video_player',
+            frameRate: 24.25,
+            callback : function(frame) {
+                window.currentFrame.html(frame);
+            }
+        });
         
         setTimeout(function() {
         for (var i=1;i<($('#video_player').get(0).duration/30);i++) {
@@ -101,6 +159,76 @@ function pad(n, width, z) {
         },1000);
         e.preventDefault();
       });
+      
+
+        $('body').on('click', '#play-pause', function(){
+            console.log(JSON.stringify(window.video));
+            
+            if($('#video_player').get(0).paused){
+                $('#video_player').get(0).play();
+                window.video.listen('frame');
+                $(this).val('Pause');
+            }else{
+                $('#video_player').get(0).pause();
+                window.video.stopListen();
+                $(this).val('Play');
+            }
+        });
+        function setMousePosition(e) {
+        var offset = e.target.offset();
+        mouse.x = event.pageX - offset.left;
+        mouse.y = event.pageY - offset.top; 
+        
+    };
+    var mouse = {
+        x: 0,
+        y: 0,
+        startX: 0,
+        startY: 0
+    };
+    var element = null;
+        $('body').on('mousemove', '#video_player_canvas', function (e) {
+        //setMousePosition(e);
+        var offset = $(this).offset();
+        mouse.x = event.pageX - offset.left;
+        mouse.y = event.pageY - offset.top; 
+        if (element !== null) {
+            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+        }
+    });
+    $('body').on('click', '#video_player_canvas', function (e) {
+        console.log('canvas onclick fired');
+        if (element !== null) {
+            element.className = 'finished_rectangle';
+            element = null;
+            //$(this).style.cursor = "default";
+            console.log("finsihed.");
+            $(this).removeClass('testing');
+            $(this).addClass('training');
+            $(this).addClass('new_training');
+            var coordinates = [];
+            $(this).children().each(function () {
+                coordinates.push([$(this).css('top'), $(this).css('left'), $(this).css('width'), $(this).css('height')]);
+            });
+            //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
+        } else {
+            console.log("begun.");
+             
+            console.log(mouse.y);
+            mouse.startX = mouse.x;
+            mouse.startY = mouse.y;
+            element = document.createElement('div');
+            element.className = 'rectangle'
+            element.style.left = mouse.x + 'px';
+            element.style.top = mouse.y + 'px';
+            $(this).append(element)
+            
+            //$(this).style.cursor = "crosshair";
+        }
+    });
     });
     
     </script>
@@ -134,6 +262,7 @@ float:right;
 border:1px solid #000;
 width:640px;
 height:480px;
+position:relative;
 }
 .thumb {
 margin:10px 10px 0 0;
@@ -142,6 +271,26 @@ width:160px;
 height:120px;
 float:left;
 }
+.rectangle, .finished_rectangle {
+    border: 1px solid #FF0000;
+    position: absolute;
+    opacity: 0.8;
+    background:#181818;
+}
+    #video_player_canvas {
+    width:640px;
+    height:450px;
+    position:absolute;
+    z-index:2;
+    
+    }
+    #video_player {
+    position:absolute;
+    z-index:1;
+    }
+    #controls {
+    margin-top:480px;
+    }
     </style>
 </head>
 <body>
