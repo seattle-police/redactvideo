@@ -10,61 +10,15 @@
     <script type="text/javascript" src="https://rawgit.com/allensarkisyan/VideoFrame/master/VideoFrame.js"/></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.js"></script>
     <script>
+    window.redaction_colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple'];
+    window.redaction_n = -1;
+    window.audio_redaction_state = 'start';
     window.status = {}
 function pad(n, width, z) {
   z = z || '0';
   n = n + '';
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
-function initDraw(canvas) {
-    function setMousePosition(e) {
-        var ev = e || window.event; //Moz || IE
-        if (ev.pageX) { //Moz
-            mouse.x = ev.pageX + window.pageXOffset;
-            mouse.y = ev.pageY + window.pageYOffset;
-        } else if (ev.clientX) { //IE
-            mouse.x = ev.clientX + document.body.scrollLeft;
-            mouse.y = ev.clientY + document.body.scrollTop;
-        }
-    };
-
-    var mouse = {
-        x: 0,
-        y: 0,
-        startX: 0,
-        startY: 0
-    };
-    var element = null;
-
-    canvas.onmousemove = function (e) {
-        setMousePosition();
-        if (element !== null) {
-            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
-            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
-            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
-            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
-        }
-    }
-
-    canvas.onclick = function (e) {
-        if (element !== null) {
-            element = null;
-            canvas.style.cursor = "default";
-            console.log("finsihed.");
-        } else {
-            console.log("begun.");
-            mouse.startX = mouse.x;
-            mouse.startY = mouse.y;
-            element = document.createElement('div');
-            element.className = 'rectangle'
-            element.style.left = mouse.x + 'px';
-            element.style.top = mouse.y + 'px';
-            canvas.appendChild(element)
-            canvas.style.cursor = "crosshair";
-        }
-    }
-}
-
     function selectContainer(containerName) {
       // hide all containers except the nav one
       $('.container').not('nav .container').hide();
@@ -77,6 +31,22 @@ function initDraw(canvas) {
       theLink.parent().addClass("active");
     }
     $(function() {
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+    socket.on('connect', function() {
+        console.log('connected');
+        socket.emit('my event', {data: 'I\'m connected!'});
+    });
+    socket.on('my response', function(msg) {
+        console.log('<p>Received: ' + msg.data + '</p>');
+    });
+    socket.on('redaction_video_id', function(msg) {
+        window.redaction_video_id = msg.data;
+        console.log('<p>Received: ' + msg.data + '</p>');
+    });
+    socket.on('framization_status', function(msg) {
+        console.log(msg.data);
+        $('#framization_status').text(msg.data);
+    });
       // hide all containers except the nav one
       $('.container').not('nav .container').hide();
       if (window.location.hash) {
@@ -130,13 +100,15 @@ function initDraw(canvas) {
         maxFilesize: 5000
       }
       $('#list_of_videos a').click(function(e) {
+        
         userid = "{{ userid }}";
+        socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+userid+'/'+$(this).attr('href').slice(1);
         html = '<div id="video_player_canvas"></div><video id="video_player" controls>';
         html += '  <source src="'+url+'">';
         html += 'Your browser does not support the video tag.';
-        html += '</video>  <div id="controls"><div class="frame"><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /></div>';
+        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
         
         $('#video_player_for_manage_videos').html(html);
         window.currentFrame = $('#currentFrame');
@@ -212,7 +184,10 @@ function initDraw(canvas) {
             var coordinates = [];
             $(this).children().each(function () {
                 coordinates.push([$(this).css('top'), $(this).css('left'), $(this).css('width'), $(this).css('height')]);
+               
             });
+            
+            
             //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
         } else {
             console.log("begun.");
@@ -225,9 +200,28 @@ function initDraw(canvas) {
             element.style.left = mouse.x + 'px';
             element.style.top = mouse.y + 'px';
             $(this).append(element)
-            
+            window.redaction_n += 1;
+            $(element).css('border-color', window.redaction_colors[window.redaction_n]);
             //$(this).style.cursor = "crosshair";
         }
+    });
+    $('body').keyup(function(e){
+       if(e.keyCode == 32){
+           // user has pressed space
+           currentTime = $('#video_player').get(0).currentTime-1;
+           if (window.audio_redaction_state == 'start') {
+             window.audio_redaction_state = 'stop';
+             var html = '<tr><td><input type="button" value="Play" class="play_audio" /><input type="button" value="Remove" /></td><td class="start"><input type="text" value="'+currentTime+'" /></td><td class="stop"><input type="text" value="" /></td></tr>';
+             $('#audio_redaction_table').append(html);
+           } else {
+             window.audio_redaction_state = 'start';
+             $('#audio_redaction_table tr:last-child .stop input').val(currentTime);
+           }
+           
+           e.preventDefault();
+           return false; // even with these pressing space bar = move down
+           setTimeout(function(){$("body").scrollTop("#video_player")},1000); // to counter act that ug doesn't work
+       }
     });
     });
     
@@ -290,6 +284,9 @@ float:left;
     }
     #controls {
     margin-top:480px;
+    }
+    #audio_redaction_table {
+    width:100%;
     }
     </style>
 </head>

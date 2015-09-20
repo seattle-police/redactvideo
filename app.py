@@ -1,5 +1,6 @@
 from flask import Flask, Response, request, redirect, render_template, make_response
 from flask.ext.socketio import SocketIO, emit
+import gevent
 import rethinkdb as r
 import re
 app = Flask(__name__)
@@ -456,7 +457,43 @@ def incoming_email():
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     return Response('')
     
+@socketio.on('message')
+def handle_message(message):
+    print message
+    send(message)
 
+@socketio.on('connect', namespace='/test')
+def test_connect():
+    emit('my response', {'data': 'Connected'})
 
+@socketio.on('framize', namespace='/test')
+def test_message(message):
+    print message['data']
+    video = message['data']
+    emit('framization_status', {'data': 'Downloading the video to framize'})
+    random_filename = id_generator()
+    emit('redaction_video_id', {'data': random_filename})
+    video_path = '/home/ubuntu/temp_videos/%s.mp4' % (random_filename)
+    target_dir = '/home/ubuntu/temp_videos/%s' % (random_filename)
+    os.system('mkdir "%s"' % (target_dir))
+    bucket.get_key(video).get_contents_to_filename(video_path)
+    emit('framization_status', {'data': 'Starting framization'})
+    os.system('ffmpeg -i "%s" -y "%s/%%08d.jpg" 1>&- 2>&-  &' % (video_path, target_dir))
+    #os.system('ffmpeg -i "%s" -y "%s/%%08d.jpg" &' % (video_path, target_dir))
+    
+    number_of_frames = os.popen("ffprobe -select_streams v -show_streams /home/ubuntu/temp_videos/%s.mp4 2>/dev/null | grep nb_frames | sed -e 's/nb_frames=//'" % (random_filename)).read()
+    print number_of_frames
+    number_of_frames = int(number_of_frames)
+    import time
+    while True:
+        number_of_files = len(os.listdir(target_dir))
+        percentage = '{0:.0%}'.format( float(number_of_files) / float(number_of_frames))
+        print number_of_files, number_of_frames
+        print 'Framizing. %s done' % (percentage)
+        emit('framization_status', {'data': 'Framizing. %s%% done' % (percentage)})
+        gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
+        if number_of_files >= number_of_frames:
+            break
+            
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
