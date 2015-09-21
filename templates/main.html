@@ -16,7 +16,8 @@ window.audio_redaction_state = 'start';
 window.status = {}
 window.mode = 'none';
 window.resizeId = '';
-
+window.current_video = '';
+window.frame_redactions = {0: {}};
 function pad(n, width, z) {
     z = z || '0';
     n = n + '';
@@ -62,6 +63,18 @@ $(function() {
     socket.on('framization_status', function(msg) {
         console.log(msg.data);
         $('#framization_status').text(msg.data);
+    });
+    socket.on('track_result', function(msg) {
+        console.log(msg);
+        var coordict = {};
+        coordict[msg['box_id']] = msg['coordinates'];
+        console.log('coordict '+coordict);
+        frame = msg['frame'];
+        if (frame in window.frame_redactions) {
+            window.frame_redactions[parseInt(msg['frame'])][msg['box_id']] = msg['coordinates'];
+        } else {
+            window.frame_redactions[parseInt(msg['frame'])] = coordict;
+        }
     });
     // hide all containers except the nav one
     $('.container').not('nav .container').hide();
@@ -117,11 +130,38 @@ $(function() {
     Dropzone.options.dropzone = {
         maxFilesize: 5000
     }
+    function getFrameCoords(frame) {
+        console.log(frame, Object.keys(window.frame_redactions), window.frame_redactions[frame]);
+        frame = parseInt(frame);
+        $('.finished_rectangle').hide();
+        $('.resize').hide();
+        if (frame in window.frame_redactions) {
+            boxes = Object.keys(window.frame_redactions[frame]);
+            jQuery.each( boxes, function( i, val ) {
+                $('#'+val).show();
+                var coord = window.frame_redactions[frame][val];
+                $('#'+val).css('left', coord[0]);
+                $('#'+val).css('top', coord[1]);
+                $('#'+val).css('width', coord[2]);
+                $('#'+val).css('height', coord[3]);
+                $('#'+val).attr('title', JSON.stringify(coord));
+                
+                $('#top_left_for_'+val).show();
+                $('#top_right_for_'+val).show();
+                $('#bottom_right_for_'+val).show();
+                $('#bottom_left_for_'+val).show();
+            });
+            //window.frame_redactions[frame];
+        }
+        
+        window.currentFrame.html(frame);
+    }
     $('#list_of_videos a').click(function(e) {
         window.redaction_n = -1;
         userid = "{{ userid }}";
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
+        window.current_video = userid+'/'+$(this).attr('href').slice(1);
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
         redactionOptions = '<div id="redaction_options">';
         redactionOptions += '<p>What do you want to do?</p>';
@@ -137,7 +177,7 @@ $(function() {
         html = '<div id="video_player_canvas">' + redactionOptions + '</div><video id="video_player" controls>';
         html += '  <source src="' + url + '">';
         html += 'Your browser does not support the video tag.';
-        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
+        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th><th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
         $('#video_player_for_manage_videos').html(html);
         setTimeout(function() {
             console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
@@ -157,7 +197,7 @@ $(function() {
             //frameRate: 24.25,
             frameRate: 29.97,
             callback: function(frame) {
-                window.currentFrame.html(frame);
+                getFrameCoords(frame);
             }
         });
         $("#video_player")[0].onplay = function ()  {
@@ -165,10 +205,16 @@ $(function() {
             //window.video.stopListen();
             window.video.listen('frame');
         };
+        $("#video_player")[0].onseeked = function () {
+            window.video.listen('frame');
+        };
+        $("#video_player")[0].onseeking = function () {
+            getFrameCoords(window.video.get());
+        };
         $("#video_player")[0].onpause = function ()  {
             console.debug("Video paused");
             //window.video.stopListen();
-            window.video.stopListen();
+            getFrameCoords(window.video.get());
         };
         setTimeout(function() {
             for (var i = 1; i < ($('#video_player').get(0).duration / 30); i++) {
@@ -253,15 +299,15 @@ $(function() {
         var color = element.style.borderColor;
         console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
         // top left
-        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="top_left_for_' + element.id + '" data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
         // top right
-        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="top_right_for_' + element.id + '" data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom right
-        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="bottom_right_for_' + element.id + '" data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom left
-        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="bottom_left_for_' + element.id + '" data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
     }
     $('body').on('click', '.resize', function(e) {
@@ -275,18 +321,25 @@ $(function() {
         mouse.height = $('#' + window.resizeId).height();
         mouse.width = $('#' + window.resizeId).width();
         mouse.startY = $('#' + window.resizeId).position().top;
-    });
+    }); 
     $('body').on('click', '#video_player_canvas', function(e) {
         if (mode == 'none') {
             $('#video_player').get(0).pause();
             console.log('canvas onclick fired');
             if (element !== null) {
                 element.className = 'finished_rectangle';
-
+                $('#'+element.id).append('<input type="button" class="delete_for_all_frames" value="Del for all frames" />');
+                $('#'+element.id).append('<input type="button" class="delete_for_some_frames" value="Del for some frames" />');
+                $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Del for just this frame" />');
+                var box_id = element.id;
                 // add markers to modify size 
                 // top left marker
                 // 6x6 
-
+                var ele = $('#'+element.id);
+                // left, top, right, bottom
+                $('#video_redaction_table').append('<tr><td style="background:'+element.style.borderColor+'"></td><td></td><td></td><td></td></tr>');
+                
+                var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
                 setTimeout(addEndPoints, 100, element); // had problem with wrong height so now using timeout and id to use jquery
                 //$(this).style.cursor = "default";
                 element = null;
@@ -299,8 +352,8 @@ $(function() {
                     coordinates.push([$(this).css('top'), $(this).css('left'), $(this).css('width'), $(this).css('height')]);
 
                 });
-                //$('#redaction_options').show();
-
+                //$('#redaction_options').show(); 
+                socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': box_id, 'coordinates': frame_coordinates});
                 //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
             } else {
                 console.log("begun.");
@@ -405,7 +458,7 @@ float:left;
     #controls {
     margin-top:480px;
     }
-    #audio_redaction_table {
+    #audio_redaction_table, #video_redaction_table {
     width:100%;
     }
 #redaction_options {
@@ -418,6 +471,14 @@ top:0;
 left:0;
 width:400px;
 height:400px;
+}
+#video_redaction_table th, #video_redaction_table td, #audio_redaction_table th, #audio_redaction_table td {
+padding:5px; 
+border:1px solid #000;
+min-height:20px;
+}
+.finished_rectangle input {
+font-size:.8em;
 }
     </style>
 </head>
@@ -472,7 +533,7 @@ height:400px;
       <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
         <input type="hidden" name="key" value="{{ userid }}/${filename}">
         <input type="hidden" name="AWSAccessKeyId" value="{{ upload['access_key_id'] }}">
-        <input type="hidden" name="acl" value="private">
+        <input type="hidden" name="acl" value="public-read">
         <input type="hidden" name="policy" value="{{ upload['policy'] }}">
         <input type="hidden" name="signature" value="{{ upload['signature'] }}">
         <div class="dz-message" data-dz-message><span>Drag videos to this box or click here to upload videos.</span></div>

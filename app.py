@@ -20,7 +20,9 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import os,sys
 import requests
-
+import dlib
+import glob
+from skimage import io
 def get_setting(setting):
     try:
         return db.table('settings').get(setting).run(conn)['value']   
@@ -78,10 +80,10 @@ def index():
   "conditions": [ 
     {"bucket": "%s"}, 
     ["starts-with", "$key", "%s/"],
-    {"acl": "private"}
+    {"acl": "public-read"}
   ]
 }""" % (get_setting('bucket_name'), user_id)
-        context['upload'] = {}
+        context['upload'] = {} 
         context['upload']['bucket_name'] = get_setting('bucket_name')
         context['upload']['policy'] = base64.b64encode(policy_document)
         context['upload']['access_key_id'] = get_setting('access_key_id')
@@ -105,7 +107,7 @@ def index():
     elif db.table('users').count().run(conn) == 0:
         return render_template('setup.html')
     else:
-        return render_template('index.html')
+        return render_template('index.html', **context)
 
 @app.route('/convert_every_video_to_h264/', methods=['GET'])         
 def convert_every_video_to_h264():
@@ -499,8 +501,36 @@ def test_message(message):
         gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
         if number_of_files >= number_of_frames:
             break
-def track_forwards_and_backwards(request):
-    
+
+def track_object(namespace, frames, start_rectangle, frame, box_id):
+    tracker = dlib.correlation_tracker()
+    positions = []
+    for k, f in enumerate(frames):
+        print("Processing Frame {}".format(k))
+        print f
+        img = io.imread(f)
+
+        # We need to initialize the tracker on the first frame
+        if k == 0:
+            # Start a track on the juice box. If you look at the first frame you
+            # will see that the juice box is contained within the bounding
+            # box (74, 67, 112, 153).
+            tracker.start_track(img, start_rectangle)
+        else:
+            # Else we just attempt to track from the previous frame
+            tracker.update(img)
+            position = tracker.get_position()
+            position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
+            namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id})
+            print position
+            #print dir(position)
+@socketio.on('track_forwards_and_backwards', namespace='/test')            
+def track_forwards_and_backwards(message):
+    print message 
+    video_hash = get_md5(message['video_id'])
+    box_id = message['box_id']
+    #return
+    #video = message['data']
     # Path to the video frames
     video_folder = 'frames'
 
@@ -508,53 +538,39 @@ def track_forwards_and_backwards(request):
     # before it can be used
     tracker = dlib.correlation_tracker()
     positions = []
+    
     # We will track the frames as we load them off of disk
-    i = int(request.POST['frame'])
-    forward_frames = ['../frames/%09d.jpg' % (i) for i in range(i, i + 100)]
-    backward_frames = ['../frames/%09d.jpg' % (i) for i in range(i, i - 100, -1) if i > 0]
+    frame = message['frame']
+    if frame == 0:
+        frame = 1
+    total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
+    plusminusframes = 1800
+    if frame + plusminusframes < total_frames:
+        end = frame + plusminusframes
+    else:
+        end = total_frames
+    
+    forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
+    if frame - plusminusframes > 0:
+        end = frame - plusminusframes
+    else:
+        end = 0
+    backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
+    print forward_frames
     #print frames
     forward_positions = []
     backward_positions = []
-    for k, f in enumerate(forward_frames):
-        print("Processing Frame {}".format(k))
-        print f
-        img = io.imread(f)
-
-        # We need to initialize the tracker on the first frame
-        if k == 0:
-            # Start a track on the juice box. If you look at the first frame you
-            # will see that the juice box is contained within the bounding
-            # box (74, 67, 112, 153).
-            tracker.start_track(img, dlib.rectangle(*json.loads(request.POST['coordinates'])[0]))
-        else:
-            # Else we just attempt to track from the previous frame
-            tracker.update(img)
-            position = tracker.get_position()
-            position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
-            print position
-            print dir(position)
-            forward_positions.append(position)
-    for k, f in enumerate(backward_frames):
-        print("Processing Frame {}".format(k))
-        print f
-        img = io.imread(f)
-
-        # We need to initialize the tracker on the first frame
-        if k == 0:
-            # Start a track on the juice box. If you look at the first frame you
-            # will see that the juice box is contained within the bounding
-            # box (74, 67, 112, 153).
-            tracker.start_track(img, dlib.rectangle(*json.loads(request.POST['coordinates'])[0]))
-        else:
-            # Else we just attempt to track from the previous frame
-            tracker.update(img)
-            position = tracker.get_position()
-            position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
-            print position
-            print dir(position)
-            backward_positions.append(position)
-    max_width = max([item[2] for item in forward_positions+backward_positions])
-    max_height = max([item[3] for item in forward_positions+backward_positions])
+    #print map(int,message['coordinates'])
+    c = message['coordinates']
+    start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
+    print start_rectangle
+    import thread
+     
+    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id))
+    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id))
+    
     #return HttpResponse(json.dumps({'backward_positions': backward_positions, 'forward_positions': forward_positions, 'max_width': max_width, 'max_height': max_height}), content_type='application/json')            
+
+            
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
