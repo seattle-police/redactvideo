@@ -499,6 +499,62 @@ def test_message(message):
         gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
         if number_of_files >= number_of_frames:
             break
-            
+def track_forwards_and_backwards(request):
+    
+    # Path to the video frames
+    video_folder = 'frames'
+
+    # Create the correlation tracker - the object needs to be initialized
+    # before it can be used
+    tracker = dlib.correlation_tracker()
+    positions = []
+    # We will track the frames as we load them off of disk
+    i = int(request.POST['frame'])
+    forward_frames = ['../frames/%09d.jpg' % (i) for i in range(i, i + 100)]
+    backward_frames = ['../frames/%09d.jpg' % (i) for i in range(i, i - 100, -1) if i > 0]
+    #print frames
+    forward_positions = []
+    backward_positions = []
+    for k, f in enumerate(forward_frames):
+        print("Processing Frame {}".format(k))
+        print f
+        img = io.imread(f)
+
+        # We need to initialize the tracker on the first frame
+        if k == 0:
+            # Start a track on the juice box. If you look at the first frame you
+            # will see that the juice box is contained within the bounding
+            # box (74, 67, 112, 153).
+            tracker.start_track(img, dlib.rectangle(*json.loads(request.POST['coordinates'])[0]))
+        else:
+            # Else we just attempt to track from the previous frame
+            tracker.update(img)
+            position = tracker.get_position()
+            position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
+            print position
+            print dir(position)
+            forward_positions.append(position)
+    for k, f in enumerate(backward_frames):
+        print("Processing Frame {}".format(k))
+        print f
+        img = io.imread(f)
+
+        # We need to initialize the tracker on the first frame
+        if k == 0:
+            # Start a track on the juice box. If you look at the first frame you
+            # will see that the juice box is contained within the bounding
+            # box (74, 67, 112, 153).
+            tracker.start_track(img, dlib.rectangle(*json.loads(request.POST['coordinates'])[0]))
+        else:
+            # Else we just attempt to track from the previous frame
+            tracker.update(img)
+            position = tracker.get_position()
+            position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
+            print position
+            print dir(position)
+            backward_positions.append(position)
+    max_width = max([item[2] for item in forward_positions+backward_positions])
+    max_height = max([item[3] for item in forward_positions+backward_positions])
+    #return HttpResponse(json.dumps({'backward_positions': backward_positions, 'forward_positions': forward_positions, 'max_width': max_width, 'max_height': max_height}), content_type='application/json')            
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
