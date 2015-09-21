@@ -114,6 +114,8 @@ def convert_every_video_to_h264():
         
         print video, video.name
         filename = video.name[video.name.index('/')+1:]
+        if not '@' in filename:
+            continue
         if not filename:
             continue
         video.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (filename))
@@ -471,10 +473,13 @@ def test_message(message):
     print message['data']
     video = message['data']
     emit('framization_status', {'data': 'Downloading the video to framize'})
-    random_filename = id_generator()
+    random_filename = get_md5(video)
     emit('redaction_video_id', {'data': random_filename})
     video_path = '/home/ubuntu/temp_videos/%s.mp4' % (random_filename)
     target_dir = '/home/ubuntu/temp_videos/%s' % (random_filename)
+    if os.path.isdir(target_dir):
+        emit('framization_status', {'data': 'Already framized. Ready to redact.'})
+        return
     os.system('mkdir "%s"' % (target_dir))
     bucket.get_key(video).get_contents_to_filename(video_path)
     emit('framization_status', {'data': 'Starting framization'})
@@ -489,8 +494,8 @@ def test_message(message):
         number_of_files = len(os.listdir(target_dir))
         percentage = '{0:.0%}'.format( float(number_of_files) / float(number_of_frames))
         print number_of_files, number_of_frames
-        print 'Framizing. %s done' % (percentage)
-        emit('framization_status', {'data': 'Framizing. %s%% done' % (percentage)})
+        print 'Framizing. %s done' % (percentage) 
+        emit('framization_status', {'data': 'Framizing. %s done' % (percentage)})
         gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
         if number_of_files >= number_of_frames:
             break

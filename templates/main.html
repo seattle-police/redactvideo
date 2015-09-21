@@ -10,147 +10,200 @@
     <script type="text/javascript" src="https://rawgit.com/allensarkisyan/VideoFrame/master/VideoFrame.js"/></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/min/dropzone.min.js"></script>
     <script>
-    window.redaction_colors = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple'];
-    window.redaction_n = -1;
-    window.audio_redaction_state = 'start';
-    window.status = {}
+window.redaction_colors = ['Lime', 'DarkGoldenRod', 'DarkKhaki', 'LightPink', 'Green', 'DarkBlue', 'FireBrick', 'LightSkyBlue', 'Red', 'SpringGreen', 'Beige', 'Maroon', 'GhostWhite', 'LawnGreen', 'White', 'Orchid', 'DarkSlateBlue', 'OliveDrab', 'DarkSeaGreen', 'MediumPurple', 'Tan', 'MediumAquaMarine', 'Pink', 'SeaGreen', 'FloralWhite', 'CornflowerBlue', 'LightSteelBlue', 'Brown', 'Silver', 'Teal', 'MediumVioletRed', 'DarkMagenta', 'Fuchsia', 'DimGray', 'IndianRed', 'MediumBlue', 'MintCream', 'HotPink', 'DarkSlateGray', 'SeaShell', 'CadetBlue', 'HoneyDew', 'Indigo', 'Coral', 'Cyan', 'Orange', 'LightGreen', 'Linen', 'LemonChiffon', 'Blue', 'DarkSalmon', 'Aqua', 'LightCoral', 'Purple', 'PaleGoldenRod', 'Magenta', 'LightGoldenRodYellow', 'Violet', 'DarkRed', 'Gold', 'DodgerBlue', 'Cornsilk', 'Chocolate', 'SlateBlue', 'DeepPink', 'PaleVioletRed', 'Black', 'RebeccaPurple', 'Snow', 'Moccasin', 'DarkGreen', 'GoldenRod', 'Salmon', 'LightSlateGray', 'OldLace', 'DarkOrange', 'Aquamarine', 'LightGray', 'Gainsboro', 'LightSeaGreen', 'Yellow', 'Turquoise', 'DarkCyan', 'LightSalmon', 'DarkGray', 'SlateGray', 'BlueViolet', 'MediumOrchid', 'Olive', 'PowderBlue', 'YellowGreen', 'Thistle', 'ForestGreen', 'MidnightBlue', 'Lavender', 'Azure', 'MediumSpringGreen', 'Chartreuse', 'MediumSlateBlue', 'Sienna', 'SaddleBrown', 'Wheat', 'AntiqueWhite', 'RoyalBlue', 'SandyBrown', 'NavajoWhite', 'AliceBlue', 'Bisque', 'PapayaWhip', 'DeepSkyBlue', 'SteelBlue', 'Gray', 'LavenderBlush', 'PeachPuff', 'Navy', 'LightYellow', 'LimeGreen', 'Crimson', 'OrangeRed', 'DarkViolet', 'RosyBrown', 'LightCyan', 'PaleTurquoise', 'SkyBlue', 'Khaki', 'DarkTurquoise', 'LightBlue', 'BlanchedAlmond', 'Plum', 'MediumSeaGreen', 'DarkOrchid', 'Tomato', 'WhiteSmoke', 'MediumTurquoise', 'MistyRose', 'GreenYellow', 'Ivory', 'PaleGreen', 'DarkOliveGreen', 'Peru', 'BurlyWood'];
+window.redaction_n = -1;
+window.audio_redaction_state = 'start';
+window.status = {}
+window.mode = 'none';
+window.resizeId = '';
+
 function pad(n, width, z) {
-  z = z || '0';
-  n = n + '';
-  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    z = z || '0';
+    n = n + '';
+    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
-    function selectContainer(containerName) {
-      // hide all containers except the nav one
-      $('.container').not('nav .container').hide();
-      // show the clicked on container
-      $('#'+containerName+'_container').show();
-      // remove active class from currently active link
-      $('.active').removeClass("active");
-      // make the clicked on link's parent li active
-      var theLink = $("a[href^='#"+containerName+"']")
-      theLink.parent().addClass("active");
-    }
-    $(function() {
+
+function makeid() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (var i = 0; i < 5; i++)
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
+function selectContainer(containerName) {
+    // hide all containers except the nav one
+    $('.container').not('nav .container').hide();
+    // show the clicked on container
+    $('#' + containerName + '_container').show();
+    // remove active class from currently active link
+    $('.active').removeClass("active");
+    // make the clicked on link's parent li active
+    var theLink = $("a[href^='#" + containerName + "']")
+    theLink.parent().addClass("active");
+}
+$(function() {
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
     socket.on('connect', function() {
         console.log('connected');
-        socket.emit('my event', {data: 'I\'m connected!'});
+        socket.emit('my event', {
+            data: 'I\'m connected!'
+        });
     });
     socket.on('my response', function(msg) {
         console.log('<p>Received: ' + msg.data + '</p>');
     });
     socket.on('redaction_video_id', function(msg) {
         window.redaction_video_id = msg.data;
-        console.log('<p>Received: ' + msg.data + '</p>');
+        console.log('Redaction video id: ' + msg.data + '</p>');
     });
     socket.on('framization_status', function(msg) {
         console.log(msg.data);
         $('#framization_status').text(msg.data);
     });
-      // hide all containers except the nav one
-      $('.container').not('nav .container').hide();
-      if (window.location.hash) {
+    // hide all containers except the nav one
+    $('.container').not('nav .container').hide();
+    if (window.location.hash) {
         var theHash = window.location.hash.slice(1);
         selectContainer(theHash);
-      } else {
+    } else {
         var defaultContainerName = 'upload_videos';
         selectContainer(defaultContainerName);
-      }
-      $('#request_an_account').click(function() {
-        $.post('/submit_request_for_account/', {'agency_email': $('#agency_email').val()}, function(data) {
-          $('#request_account_form').text("Request sent. You'll receive an email when your account is created.");
+    }
+    $('#request_an_account').click(function() {
+        $.post('/submit_request_for_account/', {
+            'agency_email': $('#agency_email').val()
+        }, function(data) {
+            $('#request_account_form').text("Request sent. You'll receive an email when your account is created.");
         });
-      });
-      $("nav a[href^='#']").click(function(e) {
+    });
+    $("nav a[href^='#']").click(function(e) {
         var containerName = $(this).attr('href').slice(1);
         selectContainer(containerName);
-  
-      });
-      // a method for getting an associative array of input field values
-      $.fn.form = function() {
+
+    });
+    // a method for getting an associative array of input field values
+    $.fn.form = function() {
         var formData = {};
         this.find('[name]').each(function() {
-          formData[this.name] = this.value;  
+            formData[this.name] = this.value;
         })
         return formData;
-      };
-      $('.save').click(function() {
+    };
+    $('.save').click(function() {
         var inputFields = $(this).parent().form();
         window.saveButton = $(this);
-        $.post('/change_site_settings/', inputFields, function (data) {
-          //console.log('updated');
-          window.saveButton.next("span").text('Settings updated.');
+        $.post('/change_site_settings/', inputFields, function(data) {
+            //console.log('updated');
+            window.saveButton.next("span").text('Settings updated.');
         });
-      });
-      $('.save_user_settings').click(function() {
+    });
+    $('.save_user_settings').click(function() {
         var inputFields = $(this).parent().form();
         window.saveButton = $(this);
-        $.post('/change_user_settings/', inputFields, function (data) {
-          //console.log('updated');
-          window.saveButton.next("span").text('Settings updated.');
+        $.post('/change_user_settings/', inputFields, function(data) {
+            //console.log('updated');
+            window.saveButton.next("span").text('Settings updated.');
         });
-      });
-      $('#overblur_and_publish_all_videos').click(function() {
+    });
+    $('#overblur_and_publish_all_videos').click(function() {
         $('#overblur_and_publish_all_videos').next().text('Processing');
         $.get('/overblur_and_publish_all_videos/', function(data) {
-          $('#overblur_and_publish_all_videos').next().text('Done');    
+            $('#overblur_and_publish_all_videos').next().text('Done');
         });
-      });
-      Dropzone.options.dropzone = {
+    });
+    Dropzone.options.dropzone = {
         maxFilesize: 5000
-      }
-      $('#list_of_videos a').click(function(e) {
-        
+    }
+    $('#list_of_videos a').click(function(e) {
+        window.redaction_n = -1;
         userid = "{{ userid }}";
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
-        url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+userid+'/'+$(this).attr('href').slice(1);
-        html = '<div id="video_player_canvas"></div><video id="video_player" controls>';
-        html += '  <source src="'+url+'">';
+        url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
+        redactionOptions = '<div id="redaction_options">';
+        redactionOptions += '<p>What do you want to do?</p>';
+        redactionOptions += '<ul>';
+        redactionOptions += '<li><a href="#track_forwards_and_backwards">Track forwards and backwards</a></li>';
+        redactionOptions += '<li><a href="#track_forwards">Track forwards</a></li>';
+        redactionOptions += '<li><a href="#track_backwards">Track backwards</a></li>';
+        redactionOptions += '<li><a href="#redact_for_time_period">Redact for time period</a></li>';
+        redactionOptions += '<li><a href="#redact_for_entire_video">Redact for entire video</a></li>';
+        redactionOptions += '</ul>';
+
+        redactionOptions += '</div>';
+        html = '<div id="video_player_canvas">' + redactionOptions + '</div><video id="video_player" controls>';
+        html += '  <source src="' + url + '">';
         html += 'Your browser does not support the video tag.';
         html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
-        
+        $('#video_player_for_manage_videos').html(html);
+        setTimeout(function() {
+            console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
+
+            $('#video_player_for_manage_videos').height($('#video_player').height());
+            $('#video_player_for_manage_videos').width($('#video_player').width());
+            console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
+
+            console.log($('#video_player_for_manage_videos').width());
+            $('#video_player_canvas').height($('#video_player').innerHeight() - 50);
+            $('#video_player_canvas').width($('#video_player').innerWidth());
+        }, 2000);
         $('#video_player_for_manage_videos').html(html);
         window.currentFrame = $('#currentFrame');
-      window.video = VideoFrame({
-            id : 'video_player',
-            frameRate: 24.25,
-            callback : function(frame) {
+        window.video = VideoFrame({
+            id: 'video_player',
+            //frameRate: 24.25,
+            frameRate: 29.97,
+            callback: function(frame) {
                 window.currentFrame.html(frame);
             }
         });
-        
+        $("#video_player")[0].onplay = function ()  {
+            console.debug("Video playing");
+            //window.video.stopListen();
+            window.video.listen('frame');
+        };
+        $("#video_player")[0].onpause = function ()  {
+            console.debug("Video paused");
+            //window.video.stopListen();
+            window.video.stopListen();
+        };
         setTimeout(function() {
-        for (var i=1;i<($('#video_player').get(0).duration/30);i++) {
-            //$('#video_player_for_manage_videos').append('<img class="thumb" src="https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+hash+'/'+pad(i, 3)+'.jpg" />');
-            $('#video_player_for_manage_videos').append('<div class="thumb" onclick=\'$("#video_player").get(0).currentTime = '+(i*30-30)+';$("#video_player").get(0).play();$("body").scrollTop("#video_player");\' style="background-image:url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+hash+'/'+pad(i, 3)+'.jpg)" type="image/jpeg"></div>');
-        
-        }
-        
-        
-        },1000);
-        e.preventDefault();
-      });
-      
+            for (var i = 1; i < ($('#video_player').get(0).duration / 30); i++) {
+                //$('#video_player_for_manage_videos').append('<img class="thumb" src="https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+hash+'/'+pad(i, 3)+'.jpg" />');
+                $('#video_player_for_manage_videos').append('<div class="thumb" onclick=\'$("#video_player").get(0).currentTime = ' + (i * 30 - 30) + ';$("#video_player").get(0).play();$("body").scrollTop("#video_player");\' style="background-image:url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + hash + '/' + pad(i, 3) + '.jpg)" type="image/jpeg"></div>');
 
-        $('body').on('click', '#play-pause', function(){
-            console.log(JSON.stringify(window.video));
-            
-            if($('#video_player').get(0).paused){
-                $('#video_player').get(0).play();
-                window.video.listen('frame');
-                $(this).val('Pause');
-            }else{
-                $('#video_player').get(0).pause();
-                window.video.stopListen();
-                $(this).val('Play');
             }
-        });
-        function setMousePosition(e) {
+
+
+        }, 1000);
+        e.preventDefault();
+    });
+
+
+    $('body').on('click', '#play-pause', function() {
+        console.log(JSON.stringify(window.video));
+
+        if ($('#video_player').get(0).paused) {
+            $('#video_player').get(0).play();
+            window.video.listen('frame');
+            $(this).val('Pause');
+        } else {
+            $('#video_player').get(0).pause();
+            window.video.stopListen();
+            $(this).val('Play');
+        }
+    });
+    
+    
+
+    function setMousePosition(e) {
         var offset = e.target.offset();
         mouse.x = event.pageX - offset.left;
-        mouse.y = event.pageY - offset.top; 
-        
+        mouse.y = event.pageY - offset.top;
+
     };
     var mouse = {
         x: 0,
@@ -159,72 +212,139 @@ function pad(n, width, z) {
         startY: 0
     };
     var element = null;
-        $('body').on('mousemove', '#video_player_canvas', function (e) {
-        //setMousePosition(e);
-        var offset = $(this).offset();
-        mouse.x = event.pageX - offset.left;
-        mouse.y = event.pageY - offset.top; 
-        if (element !== null) {
-            element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
-            element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
-            element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
-            element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+    $('body').on('mousemove', '#video_player_canvas', function(e) {
+        if (mode == 'none') {
+            //setMousePosition(e);
+            var offset = $(this).offset();
+            mouse.x = event.pageX - offset.left;
+            mouse.y = event.pageY - offset.top;
+            if (element !== null) {
+                element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+                element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+                element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+                element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+            }
+        } else if (mode == 'resize') {
+            //setMousePosition(e);
+            var offset = $(this).offset();
+            mouse.x = event.pageX - offset.left;
+            mouse.y = event.pageY - offset.top;
+            element = document.getElementById(window.resizeId);
+            if (element !== null) {
+
+                //element.style.width = $('#'+window.resizeId).width() + Math.abs(mouse.x - mouse.startX) + 'px';
+                //element.style.height = $('#'+window.resizeId).height() + Math.abs(mouse.y - mouse.startY) + 'px';
+                element.style.width = (mouse.x > mouse.startX) ? mouse.width + Math.abs(mouse.x - mouse.startX) + 'px' : mouse.width - Math.abs(mouse.startX - mouse.x) + 'px';
+                element.style.width = mouse.width + Math.abs(mouse.x - mouse.startX) + 'px';
+                element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
+                element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+                element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+            }
         }
     });
-    $('body').on('click', '#video_player_canvas', function (e) {
-        console.log('canvas onclick fired');
-        if (element !== null) {
-            element.className = 'finished_rectangle';
-            element = null;
-            //$(this).style.cursor = "default";
-            console.log("finsihed.");
-            $(this).removeClass('testing');
-            $(this).addClass('training');
-            $(this).addClass('new_training');
-            var coordinates = [];
-            $(this).children().each(function () {
-                coordinates.push([$(this).css('top'), $(this).css('left'), $(this).css('width'), $(this).css('height')]);
-               
-            });
-            
-            
-            //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
-        } else {
-            console.log("begun.");
-             
-            console.log(mouse.y);
-            mouse.startX = mouse.x;
-            mouse.startY = mouse.y;
-            element = document.createElement('div');
-            element.className = 'rectangle'
-            element.style.left = mouse.x + 'px';
-            element.style.top = mouse.y + 'px';
-            $(this).append(element)
-            window.redaction_n += 1;
-            $(element).css('border-color', window.redaction_colors[window.redaction_n]);
-            //$(this).style.cursor = "crosshair";
+
+    function addEndPoints(element) {
+        var top = parseFloat(element.style.top.slice(0, -2));
+        var left = parseFloat(element.style.left.slice(0, -2));
+        var width = parseFloat(element.style.width.slice(0, -2));
+        var height = $('#' + element.id).height();
+        console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+        console.log('color ', element.style.borderColor);
+        var color = element.style.borderColor;
+        console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+        // top left
+        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        // top right
+        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+
+        // bottom right
+        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+
+        // bottom left
+        $('#video_player_canvas').append('<div data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+
+    }
+    $('body').on('click', '.resize', function(e) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        console.log('clicked resize');
+        window.mode = 'resize';
+        window.resizeId = $(this).attr('data-box-id');
+        console.log('THE RESIZE ID: ' + window.resizeId);
+        mouse.startX = $('#' + window.resizeId).position().left;
+        mouse.height = $('#' + window.resizeId).height();
+        mouse.width = $('#' + window.resizeId).width();
+        mouse.startY = $('#' + window.resizeId).position().top;
+    });
+    $('body').on('click', '#video_player_canvas', function(e) {
+        if (mode == 'none') {
+            $('#video_player').get(0).pause();
+            console.log('canvas onclick fired');
+            if (element !== null) {
+                element.className = 'finished_rectangle';
+
+                // add markers to modify size 
+                // top left marker
+                // 6x6 
+
+                setTimeout(addEndPoints, 100, element); // had problem with wrong height so now using timeout and id to use jquery
+                //$(this).style.cursor = "default";
+                element = null;
+                console.log("finsihed.");
+                $(this).removeClass('testing');
+                $(this).addClass('training');
+                $(this).addClass('new_training');
+                var coordinates = [];
+                $(this).children().each(function() {
+                    coordinates.push([$(this).css('top'), $(this).css('left'), $(this).css('width'), $(this).css('height')]);
+
+                });
+                //$('#redaction_options').show();
+
+                //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
+            } else {
+                console.log("begun.");
+
+                console.log(mouse.y);
+                mouse.startX = mouse.x;
+                mouse.startY = mouse.y;
+                element = document.createElement('div');
+                element.className = 'rectangle';
+                element.id = makeid();
+                element.style.left = mouse.x + 'px';
+                element.style.top = mouse.y + 'px';
+                $(this).append(element)
+                window.redaction_n += 1;
+                $(element).css('border-color', window.redaction_colors[window.redaction_n]);
+
+                //$(this).style.cursor = "crosshair";
+            }
+        } else if (mode == 'resize') {
+            mode = 'none';
+            //$('#'+window.resizeId).css({'
         }
     });
-    $('body').keyup(function(e){
-       if(e.keyCode == 32){
-           // user has pressed space
-           currentTime = $('#video_player').get(0).currentTime-1;
-           if (window.audio_redaction_state == 'start') {
-             window.audio_redaction_state = 'stop';
-             var html = '<tr><td><input type="button" value="Play" class="play_audio" /><input type="button" value="Remove" /></td><td class="start"><input type="text" value="'+currentTime+'" /></td><td class="stop"><input type="text" value="" /></td></tr>';
-             $('#audio_redaction_table').append(html);
-           } else {
-             window.audio_redaction_state = 'start';
-             $('#audio_redaction_table tr:last-child .stop input').val(currentTime);
-           }
-           
-           e.preventDefault();
-           return false; // even with these pressing space bar = move down
-           setTimeout(function(){$("body").scrollTop("#video_player")},1000); // to counter act that ug doesn't work
-       }
+    $('body').keyup(function(e) {
+        if (e.keyCode == 32) {
+            // user has pressed space
+            currentTime = $('#video_player').get(0).currentTime - 1;
+            if (window.audio_redaction_state == 'start') {
+                window.audio_redaction_state = 'stop';
+                var html = '<tr><td><input type="button" value="Play" class="play_audio" /><input type="button" value="Remove" /></td><td class="start"><input type="text" value="' + currentTime + '" /></td><td class="stop"><input type="text" value="" /></td></tr>';
+                $('#audio_redaction_table').append(html);
+            } else {
+                window.audio_redaction_state = 'start';
+                $('#audio_redaction_table tr:last-child .stop input').val(currentTime);
+            }
+
+            e.preventDefault();
+            return false; // even with these pressing space bar = move down
+            setTimeout(function() {
+                $("body").scrollTop("#video_player")
+            }, 1000); // to counter act that ug doesn't work
+        }
     });
-    });
-    
+});
     </script>
     <style>
     body {
@@ -254,8 +374,8 @@ width:150px;
 #video_player_for_manage_videos {
 float:right;
 border:1px solid #000;
-width:640px;
-height:480px;
+min-width:640px;
+min-height:480px;
 position:relative;
 }
 .thumb {
@@ -272,8 +392,8 @@ float:left;
     background:#181818;
 }
     #video_player_canvas {
-    width:640px;
-    height:450px;
+    min-width:640px;
+    min-height:450px;
     position:absolute;
     z-index:2;
     
@@ -288,6 +408,17 @@ float:left;
     #audio_redaction_table {
     width:100%;
     }
+#redaction_options {
+display:none;
+background:#000;
+color:#FFF;
+z-index:3;
+position:absolute;
+top:0;
+left:0;
+width:400px;
+height:400px;
+}
     </style>
 </head>
 <body>
@@ -341,7 +472,7 @@ float:left;
       <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
         <input type="hidden" name="key" value="{{ userid }}/${filename}">
         <input type="hidden" name="AWSAccessKeyId" value="{{ upload['access_key_id'] }}">
-        <input type="hidden" name="acl" value="public-read">
+        <input type="hidden" name="acl" value="private">
         <input type="hidden" name="policy" value="{{ upload['policy'] }}">
         <input type="hidden" name="signature" value="{{ upload['signature'] }}">
         <div class="dz-message" data-dz-message><span>Drag videos to this box or click here to upload videos.</span></div>
