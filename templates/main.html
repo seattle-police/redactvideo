@@ -322,6 +322,19 @@ $(function() {
         mouse.width = $('#' + window.resizeId).width();
         mouse.startY = $('#' + window.resizeId).position().top;
     }); 
+    $('body').on('click', '.delete_for_just_this_frame', function(e) {
+        var id = $(this).parent().attr('id');
+        $(this).parent().remove();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        $('#top_left_for_'+id).remove();
+        $('#top_right_for_'+id).remove();
+        $('#bottom_right_for_'+id).remove();
+        $('#bottom_left_for_'+id).remove();
+        console.log('current video '+window.video.get()+' '+window.frame_redactions[window.video.get()]);
+        delete window.frame_redactions[window.video.get()][id];
+        
+    });
     $('body').on('click', '#video_player_canvas', function(e) {
         if (mode == 'none') {
             $('#video_player').get(0).pause();
@@ -331,6 +344,16 @@ $(function() {
                 $('#'+element.id).append('<input type="button" class="delete_for_all_frames" value="Del for all frames" />');
                 $('#'+element.id).append('<input type="button" class="delete_for_some_frames" value="Del for some frames" />');
                 $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Del for just this frame" />');
+                frame = window.video.get();
+                ele = $('#'+element.id);
+                var coordict = {};
+                var thecoords = [ Math.round(ele.position().left), Math.round(ele.position().top), Math.round(ele.width()), Math.round(ele.height())];
+                coordict[element.id] = thecoords;
+                if (frame in window.frame_redactions) {
+                    window.frame_redactions[parseInt(frame)][element.id] = thecoords;
+                } else {
+                    window.frame_redactions[parseInt(frame)] = coordict;
+                }
                 var box_id = element.id;
                 // add markers to modify size 
                 // top left marker
@@ -353,7 +376,7 @@ $(function() {
 
                 });
                 //$('#redaction_options').show(); 
-                socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': box_id, 'coordinates': frame_coordinates});
+                //socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': box_id, 'coordinates': frame_coordinates});
                 //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
             } else {
                 console.log("begun.");
