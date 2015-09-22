@@ -285,7 +285,7 @@ $(function() {
             mouse.y = event.pageY - offset.top;
             element = document.getElementById(window.resizeId);
             if (element !== null) {
-
+                
                 //element.style.width = $('#'+window.resizeId).width() + Math.abs(mouse.x - mouse.startX) + 'px';
                 //element.style.height = $('#'+window.resizeId).height() + Math.abs(mouse.y - mouse.startY) + 'px';
                 element.style.width = (mouse.x > mouse.startX) ? mouse.width + Math.abs(mouse.x - mouse.startX) + 'px' : mouse.width - Math.abs(mouse.startX - mouse.x) + 'px';
@@ -293,6 +293,25 @@ $(function() {
                 element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
                 element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
                 element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+                var top = parseFloat(element.style.top.slice(0, -2));
+                var left = parseFloat(element.style.left.slice(0, -2));
+                var width = parseFloat(element.style.width.slice(0, -2));
+                var height = $('#' + element.id).height();
+                console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+                console.log('color ', element.style.borderColor);
+                window.redactionIdToColor[element.id] = element.style.borderColor;
+                var color = element.style.borderColor;
+                console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+                // top left
+                $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
+                // top right
+                $('#top_right_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left + width - 3) + 'px'});
+                // bottom right
+                $('#bottom_right_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left + width - 3) + 'px'});
+                
+                // bottom left
+                $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
+                
             }
         }
     });
@@ -406,9 +425,29 @@ $(function() {
             }
         } else if (mode == 'resize') {
             mode = 'none';
-            element = null;
+            
             e.stopImmediatePropagation();
             e.stopPropagation();
+            var top = parseFloat(element.style.top.slice(0, -2));
+            var left = parseFloat(element.style.left.slice(0, -2));
+            var width = parseFloat(element.style.width.slice(0, -2));
+            var height = $('#' + element.id).height();
+            console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+            console.log('color ', element.style.borderColor);
+            window.redactionIdToColor[element.id] = element.style.borderColor;
+            var color = element.style.borderColor;
+            console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+            // top left
+            $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
+            // top right
+            $('#top_right_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left + width - 3) + 'px'});
+            // bottom right
+            $('#bottom_right_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left + width - 3) + 'px'});
+            
+            // bottom left
+            $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
+            
+            element = null;
             //$('#'+window.resizeId).css({'
         }
     });
