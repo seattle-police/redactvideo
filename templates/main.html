@@ -406,6 +406,9 @@ $(function() {
             }
         } else if (mode == 'resize') {
             mode = 'none';
+            element = null;
+            e.stopImmediatePropagation();
+            e.stopPropagation();
             //$('#'+window.resizeId).css({'
         }
     });
