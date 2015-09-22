@@ -684,7 +684,10 @@ def generate_redacted_video(message):
                 cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,0), -1) # -1 means fill
             cv2.imwrite(filename,img)
     emit('framization_status', {'data': 'Now merging the redacted frames into a video'})
-    os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/%s.mp4' % (video_hash, video_hash))
+    os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, video_hash))
     emit('framization_status', {'data': 'Video created'})
+    userid = message['video_id'][:message['video_id'].index('/')]
+    upload_to_s3('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, userid)
+    emit('framization_status', {'data': 'Uploaded'})
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
