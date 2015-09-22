@@ -571,6 +571,85 @@ def track_forwards_and_backwards(message):
     
     #return HttpResponse(json.dumps({'backward_positions': backward_positions, 'forward_positions': forward_positions, 'max_width': max_width, 'max_height': max_height}), content_type='application/json')            
 
+@socketio.on('track_forwards', namespace='/test')            
+def track_forwards(message):
+    print message 
+    video_hash = get_md5(message['video_id'])
+    box_id = message['box_id']
+    #return
+    #video = message['data']
+    # Path to the video frames
+    video_folder = 'frames'
+
+    # Create the correlation tracker - the object needs to be initialized
+    # before it can be used
+    tracker = dlib.correlation_tracker()
+    positions = []
+    
+    # We will track the frames as we load them off of disk
+    frame = message['frame']
+    if frame == 0:
+        frame = 1
+    total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
+    plusminusframes = 1800
+    if frame + plusminusframes < total_frames:
+        end = frame + plusminusframes
+    else:
+        end = total_frames
+    
+    forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
+    
+    print forward_frames
+    #print frames
+    forward_positions = []
+    backward_positions = []
+    #print map(int,message['coordinates'])
+    c = message['coordinates']
+    start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
+    print start_rectangle
+    import thread
+     
+    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id))
+
+@socketio.on('track_backwards', namespace='/test')            
+def track_backwards(message):
+    print message 
+    video_hash = get_md5(message['video_id'])
+    box_id = message['box_id']
+    #return
+    #video = message['data']
+    # Path to the video frames
+    video_folder = 'frames'
+
+    # Create the correlation tracker - the object needs to be initialized
+    # before it can be used
+    tracker = dlib.correlation_tracker()
+    positions = []
+    
+    # We will track the frames as we load them off of disk
+    frame = message['frame']
+    if frame == 0:
+        frame = 1
+    total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
+    plusminusframes = 1800
+    
+    if frame - plusminusframes > 0:
+        end = frame - plusminusframes
+    else:
+        end = 0
+    backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
+    print forward_frames
+    #print frames
+    forward_positions = []
+    backward_positions = []
+    #print map(int,message['coordinates'])
+    c = message['coordinates']
+    start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
+    print start_rectangle
+    import thread
+     
+    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id))
+    
             
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)

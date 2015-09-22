@@ -18,6 +18,7 @@ window.mode = 'none';
 window.resizeId = '';
 window.current_video = '';
 window.frame_redactions = {0: {}};
+
 window.redactionIdToColor = {};
 function pad(n, width, z) {
     z = z || '0';
@@ -158,6 +159,26 @@ $(function() {
                 $('#top_right_for_'+val).show();
                 $('#bottom_right_for_'+val).show();
                 $('#bottom_left_for_'+val).show();
+                element = document.getElementById(val);
+                var top = parseFloat(element.style.top.slice(0, -2));
+                var left = parseFloat(element.style.left.slice(0, -2));
+                var width = parseFloat(element.style.width.slice(0, -2));
+                var height = $('#' + element.id).height();
+                console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+                console.log('color ', element.style.borderColor);
+                window.redactionIdToColor[element.id] = element.style.borderColor;
+                var color = element.style.borderColor;
+                console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+                // top left
+                $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
+                // top right
+                $('#top_right_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left + width - 3) + 'px'});
+                // bottom right
+                $('#bottom_right_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left + width - 3) + 'px'});
+                
+                // bottom left
+                $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
+                element = null;
             });
             //window.frame_redactions[frame];
         }
@@ -185,7 +206,7 @@ $(function() {
         html = '<div id="video_player_canvas">' + redactionOptions + '</div><video id="video_player" controls>';
         html += '  <source src="' + url + '">';
         html += 'Your browser does not support the video tag.';
-        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th><th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
+        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /></div><h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th><th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3><p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
         $('#video_player_for_manage_videos').html(html);
         setTimeout(function() {
             console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
@@ -456,9 +477,12 @@ $(function() {
             console.log('canvas onclick fired');
             if (element !== null) {
                 element.className = 'finished_rectangle';
-                $('#'+element.id).append('<input type="button" class="delete_for_all_frames" value="Del for all frames" />');
-                $('#'+element.id).append('<input type="button" class="delete_for_some_frames" value="Del for some frames" />');
-                $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Del for just this frame" />');
+                $('#'+element.id).append('<input type="button" class="track_forwards_and_backwards first_question" value="Track forwards and backwards" />');
+                $('#'+element.id).append('<input type="button" class="track_forwards first_question" value="Track forwards" />');
+                $('#'+element.id).append('<input type="button" class="track_backwards first_question" value="Track backwards" />');
+                $('#'+element.id).append('<input type="button" class="redact_for_time_period first_question" value="Redact for time period" />');
+                $('#'+element.id).append('<input type="button" class="redact_for_entire_video first_question" value="Redact for entire video" />');
+                $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Remove" />');
                 frame = window.video.get();
                 ele = $('#'+element.id);
                 var coordict = {};
@@ -547,7 +571,7 @@ $(function() {
         }
     });
     $('body').keyup(function(e) {
-        if (e.keyCode == 32) {
+        if (e.keyCode == 65) { // letter a
             // user has pressed space
             currentTime = $('#video_player').get(0).currentTime - 1;
             if (window.audio_redaction_state == 'start') {
@@ -565,6 +589,58 @@ $(function() {
                 $("body").scrollTop("#video_player")
             }, 1000); // to counter act that ug doesn't work
         }
+    });
+    //            $('#'+element.id).append('<input type="button" class="track_forwards first_question" value="Track forwards" />');
+    //            $('#'+element.id).append('<input type="button" class="track_backwards first_question" value="Track backwards" />');
+    //            $('#'+element.id).append('<input type="button" class="redact_for_time_period first_question" value="Redact for time period" />');
+    //            $('#'+element.id).append('<input type="button" class="redact_for_entire_video first_question"
+    $('body').on('click', '.track_forwards_and_backwards', function(e) {
+        var ele = $(this).parent();
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+                
+        socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+                
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    });
+    $('body').on('click', '.track_forwards', function(e) {
+        var ele = $(this).parent();
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+                
+        socket.emit('track_forwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+                
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    });
+    $('body').on('click', '.track_backwards', function(e) {
+        var ele = $(this).parent();
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+                
+        socket.emit('track_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+                
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    });
+    $('body').on('click', '.redact_for_entire_video', function(e) {
+        var ele = $(this).parent();
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+        var total_frames = $('#video_player').get(0).duration * 30;
+        for (frame=1;frame<total_frames;frame++) {
+            var coordict = {};
+            var thecoords = [ Math.round(ele.position().left), Math.round(ele.position().top), Math.round(ele.width()), Math.round(ele.height())];
+            coordict[ele.attr('id')] = thecoords;
+            if (frame in window.frame_redactions) {
+                window.frame_redactions[parseInt(frame)][ele.attr('id')] = thecoords;
+            } else {
+                window.frame_redactions[parseInt(frame)] = coordict;
+            }        
+        }
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
     });
 });
     </script>
@@ -647,7 +723,10 @@ border:1px solid #000;
 min-height:20px;
 }
 .finished_rectangle input {
-font-size:.8em;
+font-size:.6em;
+}
+.resize {
+z-index:4;
 }
     </style>
 </head>
