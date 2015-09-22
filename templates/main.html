@@ -425,7 +425,15 @@ $(function() {
             
             // bottom left
             $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
-            
+            ele = $('#'+element.id);
+            var coordict = {};
+            var thecoords = [ Math.round(ele.position().left), Math.round(ele.position().top), Math.round(ele.width()), Math.round(ele.height())];
+            coordict[element.id] = thecoords;
+            if (frame in window.frame_redactions) {
+                window.frame_redactions[parseInt(frame)][element.id] = thecoords;
+            } else {
+                window.frame_redactions[parseInt(frame)] = coordict;
+            }
             element = null;
         }
     }); 
@@ -525,7 +533,15 @@ $(function() {
             
             // bottom left
             $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
-            
+            ele = $('#'+element.id);
+            var coordict = {};
+            var thecoords = [ Math.round(ele.position().left), Math.round(ele.position().top), Math.round(ele.width()), Math.round(ele.height())];
+            coordict[element.id] = thecoords;
+            if (frame in window.frame_redactions) {
+                window.frame_redactions[parseInt(frame)][element.id] = thecoords;
+            } else {
+                window.frame_redactions[parseInt(frame)] = coordict;
+            }
             element = null;
             //$('#'+window.resizeId).css({'
         }
