@@ -650,6 +650,25 @@ def track_backwards(message):
      
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id))
     
-            
+@socketio.on('generate_redacted_video', namespace='/test') 
+def generate_redacted_video(message):           
+    import cv2
+    coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
+    print coords
+    video_hash = get_md5(message['video_id'])
+    os.system('cp /home/ubuntu/temp_videos/%s /home/ubuntu/temp_videos/redacted_%s' % (video_hash, video_hash)) # we'll modify frames in the redacted folder
+    for frame in os.listdir('/home/ubuntu/temp_videos/redacted_%s' % (video_hash)):
+        frame = int(frame[:-4])
+        if frame in coords:
+            filename = '/home/ubuntu/temp_videos/redacted_%s/%08d.jpg' % (video_hash)
+            img = cv2.imread(filename)
+            for c in coords[frame].values():
+                # c is left, top, width, height
+                x1 = left
+                y1 = top 
+                x2 = left + width
+                y2 = top + height
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,255), cv2.CV_FILLED)
+            cv2.imwrite(filename,img)
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
