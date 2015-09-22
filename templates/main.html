@@ -18,6 +18,7 @@ window.mode = 'none';
 window.resizeId = '';
 window.current_video = '';
 window.frame_redactions = {0: {}};
+window.redactionIdToColor = {};
 function pad(n, width, z) {
     z = z || '0';
     n = n + '';
@@ -138,6 +139,13 @@ $(function() {
         if (frame in window.frame_redactions) {
             boxes = Object.keys(window.frame_redactions[frame]);
             jQuery.each( boxes, function( i, val ) {
+                if ($('#'+val).length) {
+                
+                    
+                    
+                } else {
+                    $('#video_player_canvas').append('<div class="finished_rectangle" id="'+val+'" style="border-color:'+window.redactionIdToColor[val]+'"></div>');
+                }
                 $('#'+val).show();
                 var coord = window.frame_redactions[frame][val];
                 $('#'+val).css('left', coord[0]);
@@ -296,6 +304,7 @@ $(function() {
         var height = $('#' + element.id).height();
         console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
         console.log('color ', element.style.borderColor);
+        window.redactionIdToColor[element.id] = element.style.borderColor;
         var color = element.style.borderColor;
         console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
         // top left
