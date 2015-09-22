@@ -285,10 +285,21 @@ $(function() {
             mouse.y = event.pageY - offset.top;
             element = document.getElementById(window.resizeId);
             if (element !== null) {
-                
+                 
                 // I have a hard time wrapping my head around the math for this
                 // below works if window.x == 'left' and window.y == 'top' and mouse.x > mouse.startX
-                if (window.x == 'left' && window.y == 'top' && mouse.x < mouse.startX && mouse.y < mouse.startY) {
+                console.log('TRUTH:');
+                a = (window.x == 'right');
+                b = (window.y == 'bottom');
+                c = (mouse.x > (mouse.startX + mouse.width));
+                d = (mouse.y > (mouse.startY + mouse.height));
+                
+                console.log(a + ' ' + b + ' ' + c + ' ' + d); 
+                console.log(window.x + ' ' + window.y);
+                
+                //console.log((window.x == 'right') + (window.y == 'top') + (mouse.x > (mouse.startX + mouse.width)) + (mouse.y > (mouse.startY + mouse.height)));
+                console.log(mouse.x + ' ' + (mouse.startX + mouse.width) + ' ' + mouse.y + ' ' + (mouse.startY + mouse.height));
+                if (window.x == 'left' && window.y == 'top' && mouse.x <= mouse.startX && mouse.y <= mouse.startY) {
                     element.style.width = mouse.width + Math.abs(mouse.x - mouse.startX) + 'px';
                     element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
                     element.style.left = mouse.x + 'px';
@@ -298,7 +309,38 @@ $(function() {
                     element.style.height = mouse.height - Math.abs(mouse.startY - mouse.y) + 'px';
                     element.style.left = mouse.x + 'px';
                     element.style.top = mouse.y + 'px';
-                
+                } else if (window.x == 'right' && window.y == 'top' && mouse.x > (mouse.startX + mouse.width) && mouse.y < (mouse.startY + mouse.height)) {
+                    element.style.width = mouse.width + Math.abs((mouse.startX + mouse.width) - mouse.x) + 'px';
+                    element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
+                    element.style.left = mouse.startX + 'px';
+                    element.style.top = mouse.y + 'px';
+                } else if (window.x == 'right' && window.y == 'top' && mouse.x < (mouse.startX + mouse.width) && mouse.y < (mouse.startY + mouse.height)) {
+                    element.style.width = Math.abs((mouse.startX + mouse.width) - mouse.x) + 'px';
+                    element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
+                    element.style.left = mouse.startX + 'px';
+                    element.style.top = mouse.y + 'px';
+                } else if (window.x == 'right' && window.y == 'bottom' && mouse.x > (mouse.startX + mouse.width) && mouse.y > (mouse.startY + mouse.height)) {
+                    
+                    element.style.width = mouse.width + Math.abs(mouse.x - (mouse.startX + mouse.width)) + 'px';
+                    element.style.height = mouse.height + Math.abs(mouse.y - (mouse.startY + mouse.height)) + 'px';
+                    element.style.left = mouse.startX + 'px';
+                    element.style.top = mouse.startY + 'px';
+                } else if (window.x == 'right' && window.y == 'bottom' && mouse.x < (mouse.startX + mouse.width) && mouse.y < (mouse.startY + mouse.height)) {
+                    element.style.width = mouse.width - Math.abs((mouse.startX + mouse.width) - mouse.x) + 'px';
+                    element.style.height = mouse.height - Math.abs((mouse.startY + mouse.height) - mouse.y) + 'px';
+                    element.style.left = mouse.startX + 'px';
+                    element.style.top = mouse.startY + 'px';
+                } else if (window.x == 'left' && window.y == 'bottom' && mouse.x < mouse.startX && mouse.y > mouse.startY) {
+                    
+                    element.style.width = mouse.width + Math.abs((mouse.startX - mouse.x)) + 'px';
+                    element.style.height = mouse.height + Math.abs(mouse.y - (mouse.startY + mouse.height)) + 'px';
+                    element.style.left = mouse.x + 'px';
+                    element.style.top = mouse.startY + 'px';
+                } else if (window.x == 'left' && window.y == 'bottom' && mouse.x > mouse.startX && mouse.y < (mouse.startY + mouse.height)) {
+                    element.style.width = mouse.width - Math.abs((mouse.x - mouse.startX)) + 'px';
+                    element.style.height = mouse.height - Math.abs((mouse.startY + mouse.height) - mouse.y) + 'px';
+                    element.style.left = mouse.x + 'px';
+                    element.style.top = mouse.startY + 'px';
                 }
                 var top = parseFloat(element.style.top.slice(0, -2));
                 var left = parseFloat(element.style.left.slice(0, -2));
@@ -339,7 +381,7 @@ $(function() {
         $('#video_player_canvas').append('<div id="top_right_for_' + element.id + '" data-x="right" data-y="top" data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom right
-        $('#video_player_canvas').append('<div id="bottom_right_for_' + element.id + '" data-x="bottom" data-y="right" data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="bottom_right_for_' + element.id + '" data-x="right" data-y="bottom" data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom left
         $('#video_player_canvas').append('<div id="bottom_left_for_' + element.id + '" data-x="left" data-y="bottom" data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
