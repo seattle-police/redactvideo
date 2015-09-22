@@ -22,5 +22,6 @@ cmake -DUSE_SSE2_INSTRUCTIONS=ON ../../tools/python
 cmake --build . --config Release --target install
 cd ..
 sudo cp dlib.so /usr/local/lib/python2.7/dist-packages/
-sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+sudo apt-get -y install libopencv-dev python-opencv
 sudo pip install -r ../requirements.txt

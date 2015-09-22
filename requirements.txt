@@ -3,3 +3,4 @@ boto
 google-api-python-client
 validate_email
 pyDNS
+scikit-image
