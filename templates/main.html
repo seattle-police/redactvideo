@@ -286,13 +286,20 @@ $(function() {
             element = document.getElementById(window.resizeId);
             if (element !== null) {
                 
-                //element.style.width = $('#'+window.resizeId).width() + Math.abs(mouse.x - mouse.startX) + 'px';
-                //element.style.height = $('#'+window.resizeId).height() + Math.abs(mouse.y - mouse.startY) + 'px';
-                element.style.width = (mouse.x > mouse.startX) ? mouse.width + Math.abs(mouse.x - mouse.startX) + 'px' : mouse.width - Math.abs(mouse.startX - mouse.x) + 'px';
-                element.style.width = mouse.width + Math.abs(mouse.x - mouse.startX) + 'px';
-                element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
-                element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
-                element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+                // I have a hard time wrapping my head around the math for this
+                // below works if window.x == 'left' and window.y == 'top' and mouse.x > mouse.startX
+                if (window.x == 'left' && window.y == 'top' && mouse.x < mouse.startX && mouse.y < mouse.startY) {
+                    element.style.width = mouse.width + Math.abs(mouse.x - mouse.startX) + 'px';
+                    element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
+                    element.style.left = mouse.x + 'px';
+                    element.style.top = mouse.y + 'px';
+                } else if (window.x == 'left' && window.y == 'top' && mouse.x > mouse.startX && mouse.y > mouse.startY) {
+                    element.style.width = mouse.width - Math.abs(mouse.startX - mouse.x) + 'px';
+                    element.style.height = mouse.height - Math.abs(mouse.startY - mouse.y) + 'px';
+                    element.style.left = mouse.x + 'px';
+                    element.style.top = mouse.y + 'px';
+                
+                }
                 var top = parseFloat(element.style.top.slice(0, -2));
                 var left = parseFloat(element.style.left.slice(0, -2));
                 var width = parseFloat(element.style.width.slice(0, -2));
@@ -327,28 +334,58 @@ $(function() {
         var color = element.style.borderColor;
         console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
         // top left
-        $('#video_player_canvas').append('<div id="top_left_for_' + element.id + '" data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="top_left_for_' + element.id + '" data-x="left" data-y="top" data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
         // top right
-        $('#video_player_canvas').append('<div id="top_right_for_' + element.id + '" data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="top_right_for_' + element.id + '" data-x="right" data-y="top" data-box-id="' + element.id + '" class="top_right resize" style="top:' + (top - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom right
-        $('#video_player_canvas').append('<div id="bottom_right_for_' + element.id + '" data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="bottom_right_for_' + element.id + '" data-x="bottom" data-y="right" data-box-id="' + element.id + '" class="bottom_right resize" style="top:' + (top + height - 3) + 'px;left:' + (left + width - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
         // bottom left
-        $('#video_player_canvas').append('<div id="bottom_left_for_' + element.id + '" data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
+        $('#video_player_canvas').append('<div id="bottom_left_for_' + element.id + '" data-x="left" data-y="bottom" data-box-id="' + element.id + '" class="bottom_left resize" style="top:' + (top + height - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
 
     }
     $('body').on('click', '.resize', function(e) {
+        
         e.stopImmediatePropagation();
         e.stopPropagation();
-        console.log('clicked resize');
-        window.mode = 'resize';
-        window.resizeId = $(this).attr('data-box-id');
-        console.log('THE RESIZE ID: ' + window.resizeId);
-        mouse.startX = $('#' + window.resizeId).position().left;
-        mouse.height = $('#' + window.resizeId).height();
-        mouse.width = $('#' + window.resizeId).width();
-        mouse.startY = $('#' + window.resizeId).position().top;
+        if (window.mode != 'resize') {
+            window.x = $(this).attr('data-x');
+            window.y = $(this).attr('data-y');
+            console.log('clicked resize');
+            window.mode = 'resize';
+            window.resizeId = $(this).attr('data-box-id');
+            console.log('THE RESIZE ID: ' + window.resizeId);
+            mouse.startX = $('#' + window.resizeId).position().left;
+            mouse.height = $('#' + window.resizeId).height();
+            mouse.width = $('#' + window.resizeId).width();
+            mouse.startY = $('#' + window.resizeId).position().top;
+        } else {
+            mode = 'none';
+            
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            var top = parseFloat(element.style.top.slice(0, -2));
+            var left = parseFloat(element.style.left.slice(0, -2));
+            var width = parseFloat(element.style.width.slice(0, -2));
+            var height = $('#' + element.id).height();
+            console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+            console.log('color ', element.style.borderColor);
+            window.redactionIdToColor[element.id] = element.style.borderColor;
+            var color = element.style.borderColor;
+            console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+            // top left
+            $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
+            // top right
+            $('#top_right_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left + width - 3) + 'px'});
+            // bottom right
+            $('#bottom_right_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left + width - 3) + 'px'});
+            
+            // bottom left
+            $('#bottom_left_for_' + element.id).css({'top': (top + height - 3) + 'px', 'left': (left - 3) + 'px'});
+            
+            element = null;
+        }
     }); 
     $('body').on('click', '.delete_for_just_this_frame', function(e) {
         var id = $(this).parent().attr('id');
