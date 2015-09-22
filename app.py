@@ -656,19 +656,35 @@ def generate_redacted_video(message):
     coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
     print coords
     video_hash = get_md5(message['video_id'])
-    os.system('cp /home/ubuntu/temp_videos/%s /home/ubuntu/temp_videos/redacted_%s' % (video_hash, video_hash)) # we'll modify frames in the redacted folder
-    for frame in os.listdir('/home/ubuntu/temp_videos/redacted_%s' % (video_hash)):
-        frame = int(frame[:-4])
+    os.system('rm -rf /home/ubuntu/temp_videos/redacted_%s' % (video_hash))
+    os.system('cp -r /home/ubuntu/temp_videos/%s /home/ubuntu/temp_videos/redacted_%s' % (video_hash, video_hash)) # we'll modify frames in the redacted folder
+    sorted(os.listdir('/home/ubuntu/temp_videos/redacted_%s' % (video_hash)))
+    frames = sorted(os.listdir('/home/ubuntu/temp_videos/redacted_%s' % (video_hash)))
+    number_of_frames = len(frames)
+    for i, frame in enumerate(frames):
+        i += 1
+        percentage = '{0:.0%}'.format( float(i) / float(number_of_frames))
+        print 'Framizing. %s done' % (percentage) 
+        emit('framization_status', {'data': 'Applying redactions to each frame %s done' % (percentage)})
+        if not frame.endswith('.jpg'):
+            continue
+        frame = str(int(frame[:-4]))
+        print frame
         if frame in coords:
-            filename = '/home/ubuntu/temp_videos/redacted_%s/%08d.jpg' % (video_hash)
+            
+            filename = '/home/ubuntu/temp_videos/redacted_%s/%08d.jpg' % (video_hash, int(frame))
+            print filename
             img = cv2.imread(filename)
             for c in coords[frame].values():
                 # c is left, top, width, height
-                x1 = left
-                y1 = top 
-                x2 = left + width
-                y2 = top + height
-                cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,255), cv2.CV_FILLED)
+                x1 = c[0]
+                y1 = c[1] 
+                x2 = x1 + c[2]
+                y2 = y1 + c[3]
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,0), -1) # -1 means fill
             cv2.imwrite(filename,img)
+    emit('framization_status', {'data': 'Now merging the redacted frames into a video'})
+    os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/%s.mp4' % (video_hash, video_hash))
+    emit('framization_status', {'data': 'Video created'})
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)

@@ -642,8 +642,10 @@ $(function() {
         e.stopPropagation();
         e.stopImmediatePropagation();
     });
-    $('body').on('click', 'generate_redacted_video', function(e) {
+    $('body').on('click', '#generate_redacted_video', function(e) {
+        console.log('clicked generate');
         socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
+        console.log('pass the emit');
     });
 });
     </script>
