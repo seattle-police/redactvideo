@@ -195,6 +195,7 @@ $(function() {
         userid = "{{ userid }}";
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
+        window.video_hash = hash;
         window.current_video = userid+'/'+$(this).attr('href').slice(1);
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
         redactionOptions = '<div id="redaction_options">';
@@ -211,7 +212,18 @@ $(function() {
         html = '<div id="video_player_canvas">' + redactionOptions + '</div><video id="video_player" controls>';
         html += '  <source src="' + url + '">';
         html += 'Your browser does not support the video tag.';
-        html += '</video>  <div id="controls"><div class="frame"><p id="framization_status"></p><span id="currentFrame">0</span></div><input type="button" value="Play/Pause" id="play-pause" /><input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" /><input type="button" value="Generate the redacted video" id="generate_redacted_video" /></div><h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th><th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3><p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p><table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
+        html += '</video>';
+        
+        html += '<div id="controls"><div class="frame">';
+        html += '<p id="framization_status"></p><span id="currentFrame">0</span></div>';
+        html += '<div id="frame_gallery"></div>';
+        html += '<input type="button" value="Play/Pause" id="play-pause" />';
+        html += '<input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" />';
+        html += '<input type="button" value="Generate the redacted video" id="generate_redacted_video" /></div>';
+        html += '<h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th>';
+        html += '<th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3>';
+        html += '<p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p>';
+        html += '<table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
         $('#video_player_for_manage_videos').html(html);
         setTimeout(function() {
             console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
@@ -652,6 +664,29 @@ $(function() {
         e.stopPropagation();
         e.stopImmediatePropagation();
     });
+    // redact_for_time_period
+    $('body').on('click', '.redact_for_time_period', function(e) {
+        console.log('clicked redact for time period');
+        var ele = $(this).parent();
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+        var total_frames = $('#video_player').get(0).duration * 30;
+        var current_frame = window.video.get();
+        console.log((ele.position().left)+'px '+(ele.position().top));
+        console.log('-'+(ele.position().left-20)+'px -'+(ele.position().top-20));
+        var padding = 100;
+        for (var i=0;i<30*10;i++) {
+            var frame = i + current_frame;
+            $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+            $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame, 8)+'.jpg)');
+            $('#frame_'+frame).height(ele.height()+padding+padding);
+            $('#frame_'+frame).width(ele.width()+padding+padding);
+            $('#frame_'+frame).css('background-position', '-'+(+ele.position().left-padding)+'px -'+(ele.position().top-padding)+'px');
+            $('#frame_'+frame).find('.redaction_preview').css({'width': ele.width(), 'height': ele.height()});
+        }
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    });
     $('body').on('click', '#generate_redacted_video', function(e) {
         console.log('clicked generate');
         socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
@@ -751,6 +786,18 @@ opacity: 0.8;
 background:#181818;
 width:70px;
 height:30px;
+}
+.frame_preview {
+float:left;
+margin-right:10px;
+margin-bottom:10px;
+position:relative;
+}
+.redaction_preview {
+position:absolute;
+top:100px;
+left:100px;
+border:1px solid lime;
 }
     </style>
 </head>
