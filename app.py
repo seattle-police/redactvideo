@@ -512,6 +512,7 @@ def test_message(message):
 def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
     tracker = dlib.correlation_tracker()
     positions = []
+    number_of_frames = len(frames)
     for k, f in enumerate(frames):
         print("Processing Frame {}".format(k))
         print f
@@ -528,6 +529,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             tracker.update(img)
             position = tracker.get_position()
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
+            percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
             print position
             #print dir(position)
