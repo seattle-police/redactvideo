@@ -77,6 +77,7 @@ $(function() {
         } else {
             window.frame_redactions[parseInt(msg['frame'])] = coordict;
         }
+        $('#track_status_for_'+box_id).find('.'+msg['direction']).text(msg['percentage']);
     });
     // hide all containers except the nav one
     $('.container').not('nav .container').hide();
@@ -602,6 +603,11 @@ $(function() {
         $('#video_player_canvas').append('<p class="track_status" id="track_status_for_'+ele.attr('id')+'">Tracking status<br/><strong>Backwards:</strong> <span class="backwards"></span> <strong>Forwards:</strong> <span class="forwards"></span></p>');    
         socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
         //$('#track_status_for_'+ele.attr('id')).css('top', );
+        var coord = window.frame_redactions[frame][window.video.get()];
+        $('#track_status_for_'+ele.attr('id')).css('left', coord[0]);
+        $('#track_status_for_'+ele.attr('id')).css('top', coord[1]);
+        $('#track_status_for_'+ele.attr('id')).css('width', coord[2]);
+        $('#track_status_for_'+ele.attr('id')).css('height', coord[3]);
         $('.first_question').hide();
         e.stopPropagation();
         e.stopImmediatePropagation();
