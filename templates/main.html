@@ -188,6 +188,7 @@ $(function() {
     }
     $('#list_of_videos a').click(function(e) {
         window.redaction_n = -1;
+        window.frame_redactions = {0: {}};
         userid = "{{ userid }}";
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
@@ -605,7 +606,7 @@ $(function() {
         //$('#track_status_for_'+ele.attr('id')).css('top', );
         var coord = window.frame_redactions[frame][window.video.get()];
         $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);
-        $('#track_status_for_'+ele.attr('id')).css('top', ele.position().top+ele.height());
+        $('#track_status_for_'+ele.attr('id')).css('top', ele.position().top+ele.height()+1);
         $('.first_question').hide();
         e.stopPropagation();
         e.stopImmediatePropagation();

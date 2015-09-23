@@ -658,9 +658,8 @@ def track_backwards(message):
     import thread
      
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
-    
-@socketio.on('generate_redacted_video', namespace='/test') 
-def generate_redacted_video(message):           
+
+def generate_redacted_video_thread(namespace, message):
     import cv2
     coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
     print coords
@@ -675,7 +674,7 @@ def generate_redacted_video(message):
         i += 1
         percentage = '{0:.0%}'.format( float(i) / float(number_of_frames))
         print 'Framizing. %s done' % (percentage) 
-        emit('framization_status', {'data': 'Applying redactions to each frame %s done' % (percentage)})
+        namespace.emit('framization_status', {'data': 'Applying redactions to each frame %s done' % (percentage)})
         if not frame.endswith('.jpg'):
             continue
         frame = str(int(frame[:-4]))
@@ -710,13 +709,17 @@ def generate_redacted_video(message):
                     y2 = 558
                 cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,0), -1) # -1 means fill
             cv2.imwrite(filename,img)
-    emit('framization_status', {'data': 'Now merging the redacted frames into a video'})
+    namespace.emit('framization_status', {'data': 'Now merging the redacted frames into a video'})
     os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, video_hash))
-    emit('framization_status', {'data': 'Video created'})
+    namespace.emit('framization_status', {'data': 'Video created'})
     userid = message['video_id'][:message['video_id'].index('/')]
     upload_to_s3('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), userid)
     youtube_token = get_users_youtube_token(userid)
     upload_to_youtube('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), youtube_token)
-    emit('framization_status', {'data': 'Uploaded'})
+    namespace.emit('framization_status', {'data': 'Uploaded'})    
+@socketio.on('generate_redacted_video', namespace='/test') 
+def generate_redacted_video(message):     
+    thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))      
+
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
