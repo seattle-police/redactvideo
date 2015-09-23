@@ -77,7 +77,7 @@ $(function() {
         } else {
             window.frame_redactions[parseInt(msg['frame'])] = coordict;
         }
-        $('#track_status_for_'+box_id).find('.'+msg['direction']).text(msg['percentage']);
+        $('#track_status_for_'+msg['box_id']).find('.'+msg['direction']).text(msg['percentage']);
     });
     // hide all containers except the nav one
     $('.container').not('nav .container').hide();
@@ -604,10 +604,8 @@ $(function() {
         socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
         //$('#track_status_for_'+ele.attr('id')).css('top', );
         var coord = window.frame_redactions[frame][window.video.get()];
-        $('#track_status_for_'+ele.attr('id')).css('left', coord[0]);
-        $('#track_status_for_'+ele.attr('id')).css('top', coord[1]);
-        $('#track_status_for_'+ele.attr('id')).css('width', coord[2]);
-        $('#track_status_for_'+ele.attr('id')).css('height', coord[3]);
+        $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);
+        $('#track_status_for_'+ele.attr('id')).css('top', ele.position().top+ele.height());
         $('.first_question').hide();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -740,6 +738,15 @@ font-size:.6em;
 }
 .resize {
 z-index:4;
+}
+.track_status {
+color:#FFF;
+font-size:.5em;
+position:absolute;
+opacity: 0.8;
+background:#181818;
+width:70px;
+height:30px;
 }
     </style>
 </head>
