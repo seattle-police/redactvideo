@@ -224,7 +224,7 @@ $(function() {
         window.video = VideoFrame({
             id: 'video_player',
             //frameRate: 24.25,
-            frameRate: 29.97,
+            frameRate: 24,
             callback: function(frame) {
                 getFrameCoords(frame);
             }
@@ -588,6 +588,8 @@ $(function() {
             setTimeout(function() {
                 $("body").scrollTop("#video_player")
             }, 1000); // to counter act that ug doesn't work
+        } else if (e.keyCode == 39) {
+            window.video.seekForward()
         }
     });
     //            $('#'+element.id).append('<input type="button" class="track_forwards first_question" value="Track forwards" />');

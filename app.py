@@ -23,6 +23,7 @@ import requests
 import dlib
 import glob
 from skimage import io
+from utils.video import put_folder_on_s3
 def get_setting(setting):
     try:
         return db.table('settings').get(setting).run(conn)['value']   
@@ -116,12 +117,12 @@ def convert_every_video_to_h264():
         
         print video, video.name
         filename = video.name[video.name.index('/')+1:]
-        if not '@' in filename:
+        if not '@' in filename and filename.endswith('.MPG'):
             continue
         if not filename:
             continue
         video.get_contents_to_filename('/home/ubuntu/temp_videos/%s' % (filename))
-        os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s" -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/converted_%s.mp4"' % (filename, filename[:-4]))
+        os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s" -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/converted_%s.mp4"' % (filename, filename[:-4]))
         os.system('rm "/home/ubuntu/temp_videos/%s"' % (filename))
         os.system('mv "/home/ubuntu/temp_videos/converted_%s.mp4" "/home/ubuntu/temp_videos/%s.mp4"' % (filename[:-4], filename[:-4]))
         
@@ -172,7 +173,8 @@ def get_users_youtube_token(user_id):
     'https://accounts.google.com/o/oauth2/token',
     data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'refresh_token': youtube_refresh_token, 'grant_type': 'refresh_token'})
     data = t.json()
-    print data
+    print data['access_token']
+    return data['access_token']
     
 @app.route('/overblur_and_publish_all_videos/')
 def overblur_and_publish_all_videos():
@@ -410,6 +412,8 @@ def upload_to_s3(filepath, userid):
 
     # Finish the upload
     mp.complete_upload()
+    key = bucket.get_key(userid+'/'+os.path.basename(source_path))
+    key.set_acl('public-read')
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
@@ -501,8 +505,11 @@ def test_message(message):
         gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
         if number_of_files >= number_of_frames:
             break
-
-def track_object(namespace, frames, start_rectangle, frame, box_id):
+    
+    put_folder_on_s3(target_dir, random_filename+'_frames', get_setting('bucket_name'), get_setting('access_key_id'), get_setting('secret_access_key'))
+     
+    
+def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
     tracker = dlib.correlation_tracker()
     positions = []
     for k, f in enumerate(frames):
@@ -521,7 +528,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id):
             tracker.update(img)
             position = tracker.get_position()
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
-            namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id})
+            namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
             print position
             #print dir(position)
 @socketio.on('track_forwards_and_backwards', namespace='/test')            
@@ -566,8 +573,8 @@ def track_forwards_and_backwards(message):
     print start_rectangle
     import thread
      
-    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id))
-    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id))
+    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id, 'forwards'))
+    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'backwards'))
     
     #return HttpResponse(json.dumps({'backward_positions': backward_positions, 'forward_positions': forward_positions, 'max_width': max_width, 'max_height': max_height}), content_type='application/json')            
 
@@ -609,7 +616,7 @@ def track_forwards(message):
     print start_rectangle
     import thread
      
-    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id))
+    thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id, 'forwards'))
 
 @socketio.on('track_backwards', namespace='/test')            
 def track_backwards(message):
@@ -638,7 +645,7 @@ def track_backwards(message):
     else:
         end = 0
     backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
-    print forward_frames
+    
     #print frames
     forward_positions = []
     backward_positions = []
@@ -648,7 +655,7 @@ def track_backwards(message):
     print start_rectangle
     import thread
      
-    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id))
+    thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
     
 @socketio.on('generate_redacted_video', namespace='/test') 
 def generate_redacted_video(message):           
@@ -662,6 +669,7 @@ def generate_redacted_video(message):
     frames = sorted(os.listdir('/home/ubuntu/temp_videos/redacted_%s' % (video_hash)))
     number_of_frames = len(frames)
     for i, frame in enumerate(frames):
+    #for i, frame in enumerate([]):
         i += 1
         percentage = '{0:.0%}'.format( float(i) / float(number_of_frames))
         print 'Framizing. %s done' % (percentage) 
@@ -678,16 +686,35 @@ def generate_redacted_video(message):
             for c in coords[frame].values():
                 # c is left, top, width, height
                 x1 = c[0]
+                if x1 < 0:
+                    x1 = 0
+                if x1 > 720:
+                    x1 = 718
+                    
                 y1 = c[1] 
+                if y1 < 0:
+                    y1 = 0
+                if y1 > 600:
+                    y1 = 558
                 x2 = x1 + c[2]
+                if x2 < 0:
+                    x2 = 0
+                if x2 > 720:
+                    x2 = 718
                 y2 = y1 + c[3]
+                if y2 < 0:
+                    y2 = 0
+                if y2 > 600:
+                    y2 = 558
                 cv2.rectangle(img, (x1, y1), (x2, y2), (0,0,0), -1) # -1 means fill
             cv2.imwrite(filename,img)
     emit('framization_status', {'data': 'Now merging the redacted frames into a video'})
-    os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, video_hash))
+    os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, video_hash))
     emit('framization_status', {'data': 'Video created'})
     userid = message['video_id'][:message['video_id'].index('/')]
-    upload_to_s3('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, userid))
+    upload_to_s3('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), userid)
+    youtube_token = get_users_youtube_token(userid)
+    upload_to_youtube('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), youtube_token)
     emit('framization_status', {'data': 'Uploaded'})
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)

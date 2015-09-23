@@ -70,6 +70,7 @@ def put_folder_on_s3(source_path, prefix, bucket_name, aws_access_key_id, aws_ac
             k.key = destpath
             k.set_contents_from_filename(sourcepath,
                     cb=percent_cb, num_cb=10)
+            k.set_acl('public-read')
                     
 if __name__ == '__main__':
     import rethinkdb as r
