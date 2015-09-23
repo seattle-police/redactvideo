@@ -160,6 +160,9 @@ $(function() {
                 $('#top_right_for_'+val).show();
                 $('#bottom_right_for_'+val).show();
                 $('#bottom_left_for_'+val).show();
+                var ele = $('#'+val);
+                $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);
+                $('#track_status_for_'+ele.attr('id')).css('top', ele.position().top+ele.height()+1);
                 element = document.getElementById(val);
                 var top = parseFloat(element.style.top.slice(0, -2));
                 var left = parseFloat(element.style.left.slice(0, -2));

@@ -24,6 +24,8 @@ import dlib
 import glob
 from skimage import io
 from utils.video import put_folder_on_s3
+import thread
+
 def get_setting(setting):
     try:
         return db.table('settings').get(setting).run(conn)['value']   
@@ -655,8 +657,7 @@ def track_backwards(message):
     c = message['coordinates']
     start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
     print start_rectangle
-    import thread
-     
+    
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
 
 def generate_redacted_video_thread(namespace, message):
