@@ -63,15 +63,19 @@ $(function() {
         console.log('Redaction video id: ' + msg.data + '</p>');
     });
     socket.on('framization_status', function(msg) {
-        console.log(msg.data);
+        console.log(JSON.stringify(msg));
         $('#framization_status').text(msg.data);
+        if (msg.data == 'Uploaded') {
+            var url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + msg['filename'];
+            $('#framization_status').after('<video controls><source src="' + url + '"></video>');
+        }
     });
     socket.on('track_result', function(msg) {
         console.log(msg);
         var coordict = {};
         coordict[msg['box_id']] = msg['coordinates'];
         console.log('coordict '+coordict);
-        frame = msg['frame'];
+        frame = parseInt(msg['frame']);
         if (frame in window.frame_redactions) {
             window.frame_redactions[parseInt(msg['frame'])][msg['box_id']] = msg['coordinates'];
         } else {
@@ -79,24 +83,25 @@ $(function() {
         }
         $('#track_status_for_'+msg['box_id']).find('.'+msg['direction']).text(msg['percentage']);
         if (msg['direction'] == 'forwards') {
-            if ($('#frame+'+msg['frame']).length) {
-                $('#frame+'+msg['frame']).remove(); // update it 
-            }
-            if ($('#frame_'+(msg['frame']+1)).length) {
-                $('#frame_gallery').before('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
-            } else if ($('#frame_'+(msg['frame']-1)).length) {
-                $('#frame_'+(msg['frame']-1)).after('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+            frame = parseInt(msg['frame']) - 1;
+            if ($('#frame_'+frame).length) {
             } else {
-                $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+                if ($('#frame_'+(frame+1)).length) {
+                    $('#frame_'+(frame+1)).before('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div><div class="frame_number">'+frame+'</div></div>');
+                } else if ($('#frame_'+(frame-1)).length) {
+                    $('#frame_'+(frame-1)).after('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div><div class="frame_number">'+frame+'</div></div>');
+                } else {
+                    $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div><div class="frame_number">'+frame+'</div></div>');
+                }
             }
             var padding = 0;
-            $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame, 8)+'.jpg)');
+            $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame+1, 8)+'.jpg)');
             $('#frame_'+frame).css('padding', padding+'px');
             $('#frame_'+frame).height(msg['coordinates'][3]+padding+padding);
             $('#frame_'+frame).width(msg['coordinates'][2]+padding+padding);
             $('#frame_'+frame).css('background-position', (-1*(msg['coordinates'][0]-padding))+'px '+(-1*(msg['coordinates'][1]-padding))+'px');
             $('#frame_'+frame).find('.redaction_preview').css({'width': msg['coordinates'][2], 'height': msg['coordinates'][3]});
-            $('#chart').append(msg['coordinates'][0]+', ');
+            //$('#chart').append(msg['coordinates'][0]+', ');
         }
     });
     // hide all containers except the nav one
@@ -256,7 +261,9 @@ $(function() {
             console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
 
             console.log($('#video_player_for_manage_videos').width());
-            $('#video_player_canvas').height($('#video_player').innerHeight() - 50);
+            
+            //$('#video_player_canvas').css('border', '5px solid red');
+            $('#video_player_canvas').height($('#video_player').height() - 50);
             $('#video_player_canvas').width($('#video_player').innerWidth());
         }, 2000);
         $('#video_player_for_manage_videos').html(html);
@@ -547,7 +554,7 @@ $(function() {
                 //$(this).style.cursor = "default";
                 $('#frame_gallery').html(''); // clear gallery
                 $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
-                $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame, 8)+'.jpg)');
+                $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame+1, 8)+'.jpg)');
                 $('#frame_'+frame).css('padding', padding+'px');
                 $('#frame_'+frame).height(ele.height()+padding+padding);
                 $('#frame_'+frame).width(ele.width()+padding+padding);
@@ -640,6 +647,8 @@ $(function() {
             }, 1000); // to counter act that ug doesn't work
         } else if (e.keyCode == 39) {
             window.video.seekForward()
+        } else if (e.keyCode == 37) {
+            window.video.seekBackward()
         }
     });
     //            $('#'+element.id).append('<input type="button" class="track_forwards first_question" value="Track forwards" />');
@@ -736,6 +745,7 @@ $(function() {
         socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
         console.log('pass the emit');
     });
+    if (false) {
     $('body').on('click', '.frame_preview', function(e) {
         window.direction = 'forwards';
         window.video.seekTo({frame: parseInt($(this).attr('id').slice(6))});
@@ -752,6 +762,7 @@ $(function() {
         e.stopPropagation();
         e.stopImmediatePropagation();
     });
+    }
 });
     </script>
     <style>
@@ -782,8 +793,6 @@ width:150px;
 #video_player_for_manage_videos {
 float:right;
 border:1px solid #000;
-min-width:640px;
-min-height:480px;
 position:relative;
 }
 .thumb {
@@ -800,8 +809,6 @@ float:left;
     background:#181818;
 }
     #video_player_canvas {
-    min-width:640px;
-    min-height:450px;
     position:absolute;
     z-index:2;
     
@@ -859,6 +866,12 @@ border:1px solid lime;
 }
 .clear {
 clear:both;
+}
+.frame_number {
+position:absolute;
+bottom:0px;
+left:0px;
+font-size:0.6em;
 }
     </style>
 </head>

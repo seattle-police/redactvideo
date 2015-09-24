@@ -529,23 +529,45 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             # will see that the juice box is contained within the bounding
             # box (74, 67, 112, 153).
             tracker.start_track(img, start_rectangle)
+            percentage = r'0%'
+            namespace.emit('track_result', {'frame': frame + k, 'coordinates': history[0], 'box_id': box_id, 'percentage': percentage, 'direction': direction})
         else:
             # Else we just attempt to track from the previous frame
             tracker.update(img)
             position = tracker.get_position()
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             print 'last', last
-            how_far = 16
-            if len(history) > (how_far + 1):
-                if (position[k] - history[k-how_far][0]) > 40: # detect that box has moved significantly to the right 
-                    for i in range(16):
-                        right = position[k][0]
-                        position = history[k-how_far]
-                        position[3] = right-position[0]
-                        
-                        namespace.emit('track_result', {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
-                    return
+            how_far = 50
             if False:
+                if len(history) > (how_far + 2):
+                    for i in range(0,2):
+                        if (abs(position[i] - history[k-how_far][i])) > 30: # detect that box has moved significantly to the right 
+                            #gevent.sleep(60)
+                            if i == 0:
+                                width = position[0] - history[k-how_far][0] + history[k-how_far][2] 
+                                position = history[k-how_far]
+                                position[2] = width
+                            else:
+                                height = position[1] - history[k-how_far][1] + history[k-how_far][3] 
+                                position = history[k-how_far]
+                                position[2] = height
+                            for i in range(how_far):
+                                
+                                print {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction}
+                                namespace.emit('track_result', {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
+                            left = int(position[0])
+                            top =  int(position[1])
+                            right = left + int(position[2])
+                            bottom = top + int(position[3])
+                            print left, top, right, bottom
+                            if right > left and bottom > top:
+                                start_rectangle = dlib.rectangle(left, top, right, bottom)
+                                print start_rectangle
+                                
+                                tracker = dlib.correlation_tracker()
+                                tracker.start_track(img, start_rectangle)
+                            
+            if True:
                 if last:
                     throw_out = False
                     for i, value in enumerate(last):
@@ -576,6 +598,8 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
                 start_rectangle = dlib.rectangle(left, top, right, bottom)
                 tracker = dlib.correlation_tracker()
                 tracker.start_track(img, start_rectangle)
+            padding = 5
+            position = [position[0]-padding, position[1]-padding, position[2]+(2*padding), position[3]+(2*padding)]
             
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             if direction == 'backwards':
@@ -600,9 +624,9 @@ def track_forwards_and_backwards(message):
     positions = []
     
     # We will track the frames as we load them off of disk
-    frame = message['frame']
-    if frame == 0:
-        frame = 1
+    frame = message['frame'] + 1
+    #if frame == 0:
+    #    frame = 1
     total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
     plusminusframes = 24 * 60 * 10 # ten minutes
     if frame + plusminusframes < total_frames:
@@ -769,8 +793,9 @@ def generate_redacted_video_thread(namespace, message):
     userid = message['video_id'][:message['video_id'].index('/')]
     upload_to_s3('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), userid)
     youtube_token = get_users_youtube_token(userid)
+    namespace.emit('framization_status', {'data': 'Uploaded', 'filename': '%s/redacted_%s.mp4' % (userid, video_hash)})
     upload_to_youtube('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), youtube_token)
-    namespace.emit('framization_status', {'data': 'Uploaded'})    
+    namespace.emit('framization_status', {'data': 'Uploaded to Youtube'})    
 @socketio.on('generate_redacted_video', namespace='/test') 
 def generate_redacted_video(message):     
     thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))      
