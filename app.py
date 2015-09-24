@@ -516,6 +516,8 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
     positions = []
     number_of_frames = len(frames)
     last = None
+    
+    history = [[int(start_rectangle.left()), int(start_rectangle.top()), int(start_rectangle.width()), int(start_rectangle.height())]]
     for k, f in enumerate(frames):
         print "Processing Frame %s (%s)" % (k, f)
         print f
@@ -533,6 +535,16 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             position = tracker.get_position()
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             print 'last', last
+            how_far = 16
+            if len(history) > (how_far + 1):
+                if (position[k] - history[k-how_far][0]) > 40: # detect that box has moved significantly to the right 
+                    for i in range(16):
+                        right = position[k][0]
+                        position = history[k-how_far]
+                        position[3] = right-position[0]
+                        
+                        namespace.emit('track_result', {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
+                    return
             if False:
                 if last:
                     throw_out = False
@@ -568,7 +580,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             if direction == 'backwards':
                 k = -1 * k
-            
+            history.append(position)
             namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
             print position
             #print dir(position)
