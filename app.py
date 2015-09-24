@@ -528,14 +528,15 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             # Start a track on the juice box. If you look at the first frame you
             # will see that the juice box is contained within the bounding
             # box (74, 67, 112, 153).
-            left = start_rectangle.left() - 10
-            top =  start_rectangle.top() - 10
-            right = start_rectangle.right() + 10
-            bottom = start_rectangle.bottom() + 10
-            print left, top, right, bottom
-            start_rectangle = dlib.rectangle(left, top, right, bottom)
-            print [int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20]
-            #start_rectangle = dlib.rectangle(int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20)
+            if False:
+                left = start_rectangle.left() - 10
+                top =  start_rectangle.top() - 10
+                right = start_rectangle.right() + 10
+                bottom = start_rectangle.bottom() + 10
+                print left, top, right, bottom
+                start_rectangle = dlib.rectangle(left, top, right, bottom)
+                print [int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20]
+                #start_rectangle = dlib.rectangle(int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20)
             tracker.start_track(img, start_rectangle)
             percentage = r'0%'
             namespace.emit('track_result', {'frame': frame + k, 'coordinates': history[0], 'box_id': box_id, 'percentage': percentage, 'direction': direction})
@@ -599,7 +600,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
                     last = position
             #last = position
             #if k % 2 == 99:
-            if True:
+            if False:
                 left = int(position[0])-10
                 top =  int(position[1])-10
                 right = int(position[0]) + int(position[2]) + 10
@@ -608,9 +609,9 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
                 start_rectangle = dlib.rectangle(left, top, right, bottom)
                 tracker = dlib.correlation_tracker()
                 tracker.start_track(img, start_rectangle)
-            padding = 10*k
-            position = [position[0]+padding, position[1]+padding, position[2]-(2*padding), position[3]-(2*padding)]
-            print 'MODIFIED POSITION', position
+                padding = 10*k
+                position = [position[0]+padding, position[1]+padding, position[2]-(2*padding), position[3]-(2*padding)]
+                print 'MODIFIED POSITION', position
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             if direction == 'backwards':
                 k = -1 * k
