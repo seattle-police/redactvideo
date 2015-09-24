@@ -18,7 +18,7 @@ window.mode = 'none';
 window.resizeId = '';
 window.current_video = '';
 window.frame_redactions = {0: {}};
-
+window.direction = '';
 window.redactionIdToColor = {};
 function pad(n, width, z) {
     z = z || '0';
@@ -78,6 +78,26 @@ $(function() {
             window.frame_redactions[parseInt(msg['frame'])] = coordict;
         }
         $('#track_status_for_'+msg['box_id']).find('.'+msg['direction']).text(msg['percentage']);
+        if (msg['direction'] == 'forwards') {
+            if ($('#frame+'+msg['frame']).length) {
+                $('#frame+'+msg['frame']).remove(); // update it 
+            }
+            if ($('#frame_'+(msg['frame']+1)).length) {
+                $('#frame_gallery').before('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+            } else if ($('#frame_'+(msg['frame']-1)).length) {
+                $('#frame_'+(msg['frame']-1)).after('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+            } else {
+                $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+            }
+            var padding = 0;
+            $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame, 8)+'.jpg)');
+            $('#frame_'+frame).css('padding', padding+'px');
+            $('#frame_'+frame).height(msg['coordinates'][3]+padding+padding);
+            $('#frame_'+frame).width(msg['coordinates'][2]+padding+padding);
+            $('#frame_'+frame).css('background-position', (-1*(msg['coordinates'][0]-padding))+'px '+(-1*(msg['coordinates'][1]-padding))+'px');
+            $('#frame_'+frame).find('.redaction_preview').css({'width': msg['coordinates'][2], 'height': msg['coordinates'][3]});
+            $('#chart').append(msg['coordinates'][0]+', ');
+        }
     });
     // hide all containers except the nav one
     $('.container').not('nav .container').hide();
@@ -216,10 +236,13 @@ $(function() {
         
         html += '<div id="controls"><div class="frame">';
         html += '<p id="framization_status"></p><span id="currentFrame">0</span></div>';
-        html += '<div id="frame_gallery"></div>';
         html += '<input type="button" value="Play/Pause" id="play-pause" />';
         html += '<input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" />';
         html += '<input type="button" value="Generate the redacted video" id="generate_redacted_video" /></div>';
+        html += '<div id="chart"></div>';
+        html += '<div id="frame_gallery"></div>';
+        html += '<div class="clear"></div>';
+        
         html += '<h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th>';
         html += '<th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3>';
         html += '<p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p>';
@@ -501,6 +524,7 @@ $(function() {
                 $('#'+element.id).append('<input type="button" class="redact_for_entire_video first_question" value="Redact for entire video" />');
                 $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Remove" />');
                 frame = window.video.get();
+                window.redaction_box_id = element.id; 
                 ele = $('#'+element.id);
                 var coordict = {};
                 var thecoords = [ Math.round(ele.position().left), Math.round(ele.position().top), Math.round(ele.width()), Math.round(ele.height())];
@@ -517,10 +541,19 @@ $(function() {
                 var ele = $('#'+element.id);
                 // left, top, right, bottom
                 $('#video_redaction_table').append('<tr><td style="background:'+element.style.borderColor+'"></td><td></td><td></td><td></td></tr>');
-                
+                var padding = 0;
                 var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
                 setTimeout(addEndPoints, 100, element); // had problem with wrong height so now using timeout and id to use jquery
                 //$(this).style.cursor = "default";
+                $('#frame_gallery').html(''); // clear gallery
+                $('#frame_gallery').append('<div class="frame_preview" id="frame_'+frame+'"><div class="redaction_preview"></div></div>');
+                $('#frame_'+frame).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame, 8)+'.jpg)');
+                $('#frame_'+frame).css('padding', padding+'px');
+                $('#frame_'+frame).height(ele.height()+padding+padding);
+                $('#frame_'+frame).width(ele.width()+padding+padding);
+                console.log((-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px')
+                $('#frame_'+frame).css('background-position', (-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px');
+                $('#frame_'+frame).find('.redaction_preview').css({'width': ele.width(), 'height': ele.height()});
                 element = null;
                 console.log("finsihed.");
                 $(this).removeClass('testing');
@@ -614,6 +647,7 @@ $(function() {
     //            $('#'+element.id).append('<input type="button" class="redact_for_time_period first_question" value="Redact for time period" />');
     //            $('#'+element.id).append('<input type="button" class="redact_for_entire_video first_question"
     $('body').on('click', '.track_forwards_and_backwards', function(e) {
+        window.direction = 'both';
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
         $('#video_player_canvas').append('<p class="track_status" id="track_status_for_'+ele.attr('id')+'">Tracking status<br/><strong>Backwards:</strong> <span class="backwards"></span> <strong>Forwards:</strong> <span class="forwards"></span></p>');    
@@ -627,6 +661,7 @@ $(function() {
         e.stopImmediatePropagation();
     });
     $('body').on('click', '.track_forwards', function(e) {
+        window.direction = 'forwards';
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
                 
@@ -640,6 +675,7 @@ $(function() {
         e.stopImmediatePropagation();
     });
     $('body').on('click', '.track_backwards', function(e) {
+        window.direction = 'backwards';
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
                 
@@ -699,6 +735,22 @@ $(function() {
         console.log('clicked generate');
         socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
         console.log('pass the emit');
+    });
+    $('body').on('click', '.frame_preview', function(e) {
+        window.direction = 'forwards';
+        window.video.seekTo({frame: parseInt($(this).attr('id').slice(6))});
+        
+        var ele = $('#'+window.redaction_box_id);
+        var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
+                
+        socket.emit('track_forwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+        $('#video_player_canvas').append('<p class="track_status" id="track_status_for_'+ele.attr('id')+'">Tracking status<br/><strong>Forwards:</strong> <span class="forwards"></span></p>');    
+        var coord = window.frame_redactions[frame][window.video.get()];
+        $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);
+        $('#track_status_for_'+ele.attr('id')).css('top', ele.position().top+ele.height()+1);        
+        $('.first_question').hide();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
     });
 });
     </script>
@@ -804,6 +856,9 @@ position:relative;
 .redaction_preview {
 position:absolute;
 border:1px solid lime;
+}
+.clear {
+clear:both;
 }
     </style>
 </head>

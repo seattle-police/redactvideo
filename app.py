@@ -515,11 +515,12 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
     tracker = dlib.correlation_tracker()
     positions = []
     number_of_frames = len(frames)
+    last = None
     for k, f in enumerate(frames):
-        print("Processing Frame {}".format(k))
+        print "Processing Frame %s (%s)" % (k, f)
         print f
         img = io.imread(f)
-
+        
         # We need to initialize the tracker on the first frame
         if k == 0:
             # Start a track on the juice box. If you look at the first frame you
@@ -530,9 +531,44 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             # Else we just attempt to track from the previous frame
             tracker.update(img)
             position = tracker.get_position()
-            tracker.start_track(img, start_rectangle)
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
+            print 'last', last
+            if False:
+                if last:
+                    throw_out = False
+                    for i, value in enumerate(last):
+                        print 'abs', abs(value - position[i])
+                        if abs(value - position[i]) > 10: # helps ensure we don't go way off track have seen tracker go completely right of head when head goes to side
+                            position = last
+                            throw_out = True
+                            left = int(position[0])
+                            top =  int(position[1])
+                            right = left + int(position[2])
+                            bottom = top + int(position[3])
+                            start_rectangle = dlib.rectangle(left, top, right, bottom)
+                            tracker = dlib.correlation_tracker()
+                            tracker.start_track(img, start_rectangle)
+                            break
+                    if not throw_out:
+                        last = position                 
+                            
+                else:
+                    last = position
+            #last = position
+            #if k % 2 == 99:
+            if False:
+                left = int(position[0])
+                top =  int(position[1])
+                right = left + int(position[2])
+                bottom = top + int(position[3])
+                start_rectangle = dlib.rectangle(left, top, right, bottom)
+                tracker = dlib.correlation_tracker()
+                tracker.start_track(img, start_rectangle)
+            
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
+            if direction == 'backwards':
+                k = -1 * k
+            
             namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
             print position
             #print dir(position)
@@ -556,17 +592,19 @@ def track_forwards_and_backwards(message):
     if frame == 0:
         frame = 1
     total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
-    plusminusframes = 1800
+    plusminusframes = 24 * 60 * 10 # ten minutes
     if frame + plusminusframes < total_frames:
         end = frame + plusminusframes
     else:
         end = total_frames
-    
+    # remove later 
+    end = total_frames
     forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
     if frame - plusminusframes > 0:
         end = frame - plusminusframes
     else:
         end = 0
+    end = 0 
     backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
     print forward_frames
     #print frames
@@ -606,9 +644,10 @@ def track_forwards(message):
     plusminusframes = 1800
     if frame + plusminusframes < total_frames:
         end = frame + plusminusframes
+    
     else:
         end = total_frames
-    
+    end = total_frames-100
     forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
     
     print forward_frames
@@ -649,6 +688,7 @@ def track_backwards(message):
         end = frame - plusminusframes
     else:
         end = 0
+    end = 0
     backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
     
     #print frames
