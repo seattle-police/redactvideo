@@ -530,6 +530,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             # Else we just attempt to track from the previous frame
             tracker.update(img)
             position = tracker.get_position()
+            tracker.start_track(img, start_rectangle)
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             namespace.emit('track_result', {'frame': frame + k, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
