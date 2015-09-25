@@ -511,7 +511,9 @@ def test_message(message):
     put_folder_on_s3(target_dir, random_filename+'_frames', get_setting('bucket_name'), get_setting('access_key_id'), get_setting('secret_access_key'))
      
     
-def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
+def track_object(namespace, frames, start_rectangle, frame, box_id, direction, handle_head_to_side=True, throw_out_weirdness=True):
+    conn = r.connect( "localhost", 28015).repl()
+    db.table('track_status').insert({'id': box_id, 'stop': False}, conflict='update').run(conn) # this allows us to stop tracking from web interface 
     tracker = dlib.correlation_tracker()
     positions = []
     number_of_frames = len(frames)
@@ -519,6 +521,8 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
     
     history = [[int(start_rectangle.left()), int(start_rectangle.top()), int(start_rectangle.width()), int(start_rectangle.height())]]
     for k, f in enumerate(frames):
+        if db.table('track_status').get(box_id).run(conn)['stop']:
+            return
         print "Processing Frame %s (%s)" % (k, f)
         print f
         img = io.imread(f)
@@ -547,20 +551,18 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             #position = [int(position.left())+10, int(position.top())+10, int(position.width())-20, int(position.height())-20]
             print 'last', last
-            how_far = 50
-            if False:
+            how_far = 10
+            anomaly = 20
+            if handle_head_to_side:
                 if len(history) > (how_far + 2):
                     for i in range(0,2):
-                        if (abs(position[i] - history[k-how_far][i])) > 30: # detect that box has moved significantly to the right 
-                            #gevent.sleep(60)
-                            if i == 0:
-                                width = position[0] - history[k-how_far][0] + history[k-how_far][2] 
-                                position = history[k-how_far]
-                                position[2] = width
+                        if (abs(position[i] - history[k-how_far][i])) > anomaly: # detect that box has moved significantly to the right 
+                            if position[i] > history[k-how_far][i]:
+                                d = position[0 + i] - history[k-how_far][0 + i] + history[k-how_far][2] 
                             else:
-                                height = position[1] - history[k-how_far][1] + history[k-how_far][3] 
-                                position = history[k-how_far]
-                                position[2] = height
+                                d = history[k-how_far][0 + i] - position[0 + i] + history[k-how_far][2] 
+                            position = history[k-how_far]
+                            position[2 + i] = d
                             for i in range(how_far):
                                 
                                 print {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction}
@@ -577,7 +579,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction):
                                 tracker = dlib.correlation_tracker()
                                 tracker.start_track(img, start_rectangle)
                             
-            if False:
+            if throw_out_weirdness:
                 if last:
                     throw_out = False
                     for i, value in enumerate(last):
@@ -812,5 +814,9 @@ def generate_redacted_video_thread(namespace, message):
 def generate_redacted_video(message):     
     thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))      
 
+@socketio.on('stop_tracking', namespace='/test')
+def stop_tracking(message):
+    db.table('track_status').get(message['box_id']).update({'stop': True}).run(conn)
+    
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)

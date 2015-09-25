@@ -518,6 +518,12 @@ $(function() {
         delete window.frame_redactions[window.video.get()][id];
         
     });
+    $('body').on('click', '.stop_tracking', function(e) {
+        var id = $(this).parent().attr('id');
+        socket.emit('stop_tracking', {'box_id': id});
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+    });
     $('body').on('click', '#video_player_canvas', function(e) {
         if (mode == 'none') {
             $('#video_player').get(0).pause();
@@ -530,6 +536,7 @@ $(function() {
                 $('#'+element.id).append('<input type="button" class="redact_for_time_period first_question" value="Redact for time period" />');
                 $('#'+element.id).append('<input type="button" class="redact_for_entire_video first_question" value="Redact for entire video" />');
                 $('#'+element.id).append('<input type="button" class="delete_for_just_this_frame" value="Remove" />');
+                $('#'+element.id).append('<input type="button" class="stop_tracking" value="Stop tracking" />');
                 frame = window.video.get();
                 window.redaction_box_id = element.id; 
                 ele = $('#'+element.id);
