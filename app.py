@@ -16,6 +16,8 @@ from flask.ext.socketio import session as socket_session
 conn = r.connect( "localhost", 28015).repl()
 db = r.db('redactvideodotorg')
 print conn
+import boto
+import boto.awslambda
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import os,sys
@@ -416,6 +418,15 @@ def upload_to_s3(filepath, userid):
     mp.complete_upload()
     key = bucket.get_key(userid+'/'+os.path.basename(source_path))
     key.set_acl('public-read')
+
+@app.route('/save_upperbody_detection_coordinates/', methods=['POST'])
+def save_upperbody():
+    import json
+    print request.form
+    conn = r.connect( "localhost", 28015).repl()
+    db.table('upperbody_detections').insert({'id': request.form['filename'], 'coordinates': json.loads(request.form['detected_regions'])}, conflict='update').run(conn)
+    print request.form
+    return Response('')
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
@@ -551,11 +562,12 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             #position = [int(position.left())+10, int(position.top())+10, int(position.width())-20, int(position.height())-20]
             print 'last', last
-            how_far = 10
-            anomaly = 20
+            how_far = 20
+            anomaly = 30
             if handle_head_to_side:
                 if len(history) > (how_far + 2):
-                    for i in range(0,2):
+                    #for i in range(0,2): # both horizontal (0) and vertical (1)
+                    for i in range(0,1): # just horizontal 
                         if (abs(position[i] - history[k-how_far][i])) > anomaly: # detect that box has moved significantly to the right 
                             if position[i] > history[k-how_far][i]:
                                 d = position[0 + i] - history[k-how_far][0 + i] + history[k-how_far][2] 
@@ -810,13 +822,51 @@ def generate_redacted_video_thread(namespace, message):
     namespace.emit('framization_status', {'data': 'Uploaded', 'filename': '%s/redacted_%s.mp4' % (userid, video_hash)})
     upload_to_youtube('/home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash), youtube_token)
     namespace.emit('framization_status', {'data': 'Uploaded to Youtube'})    
+    
 @socketio.on('generate_redacted_video', namespace='/test') 
 def generate_redacted_video(message):     
-    thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))      
-
+    thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))          
+    
 @socketio.on('stop_tracking', namespace='/test')
 def stop_tracking(message):
     db.table('track_status').get(message['box_id']).update({'stop': True}).run(conn)
+
+def do_detect_upper_body(namespace, video_id, start_frame):
+    # video_id should be userid/filename
+    video_hash = get_md5(video_id)
+    s3_prefix = get_md5(video_id)+'_frames'
+    total_frames = len(os.listdir('/home/ubuntu/temp_videos/%s/' % (video_hash)))
+    for i, frame in enumerate(range(start_frame, total_frames)):
+        
+        #if i > 10:
+        #    return
+        if i % 1800 == 0: # My AWS account is allotted 1,800 lambda functions running at one time running time is about 8 seconds
+            gevent.sleep(10)
+        # To ensure don't rack up huge bill because someone clicked over and over and over
+        filename = '%s_frames/%08d.jpg' % (video_hash, frame)
+        if db.table('upperbody_detections').get(filename).run(conn):
+            print 'already did upper body detection'
+            continue
+        lambdaConn = boto.connect_awslambda(get_setting('access_key_id'), get_setting('secret_access_key'), region=boto.awslambda.get_regions('awslambda')[0])
+        print i, frame, lambdaConn.invoke_async('detectUpperBody', json.dumps({'filename': filename}))
+        
+    return 
+
+@socketio.on('get_upper_body_detections', namespace='/test')
+def get_upper_body_detections(message):
+    detections = db.table('upperbody_detections').run(conn)
+    detections = [(int(item['id'][item['id'].find('/')+1:item['id'].find('.')]), item['coordinates']) for item in detections]
+    print detections
+    for item in detections:
+        emit('upper_body_detections', {'frame': item[0], 'detections': item[1]})
+    
+    
+@socketio.on('detect_upper_body', namespace='/test')     
+def detect_upper_body(message): 
+    print 'facilitate_detect_upper_body'
+    print message 
+    thread.start_new_thread(do_detect_upper_body, (request.namespace, message['video_id'], message['start_frame']))
+    
     
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)

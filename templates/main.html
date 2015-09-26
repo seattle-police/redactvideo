@@ -20,6 +20,7 @@ window.current_video = '';
 window.frame_redactions = {0: {}};
 window.direction = '';
 window.redactionIdToColor = {};
+window.detections = {};
 function pad(n, width, z) {
     z = z || '0';
     n = n + '';
@@ -57,6 +58,12 @@ $(function() {
     });
     socket.on('my response', function(msg) {
         console.log('<p>Received: ' + msg.data + '</p>');
+    });
+    socket.on('upper_body_detections', function(msg) {
+        
+        window.detections[parseInt(msg['frame'])] = msg['detections'];
+        //console.log(Object.keys(window.detections));
+        //console.log(window.detections[parseInt(msg['frame'])]);
     });
     socket.on('redaction_video_id', function(msg) {
         window.redaction_video_id = msg.data;
@@ -163,7 +170,20 @@ $(function() {
         frame = parseInt(frame);
         $('.finished_rectangle').hide();
         $('.resize').hide();
+        $('.detection_boxes').remove();
+        if (frame in window.detections) {
+            console.log('YES '+window.detections);
+            boxes = window.detections[frame];
+            jQuery.each( boxes, function( i, val ) {
+                $('#video_player_canvas').append('<div class="finished_rectangle detection_boxes" id="detection_'+i+'" style="border:5px solid blue;"></div>');
+                $('#detection_'+i).css('left', val[0]);
+                $('#detection_'+i).css('top', val[1]);
+                $('#detection_'+i).css('width', val[2]);
+                $('#detection_'+i).css('height', val[3]);
+            });
+        }
         if (frame in window.frame_redactions) {
+            
             boxes = Object.keys(window.frame_redactions[frame]);
             jQuery.each( boxes, function( i, val ) {
                 if ($('#'+val).length) {
@@ -214,6 +234,7 @@ $(function() {
         
         window.currentFrame.html(frame);
     }
+    
     $('#list_of_videos a').click(function(e) {
         window.redaction_n = -1;
         window.frame_redactions = {0: {}};
@@ -221,6 +242,7 @@ $(function() {
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
         window.video_hash = hash;
+        socket.emit('get_upper_body_detections', {data: ''});
         window.current_video = userid+'/'+$(this).attr('href').slice(1);
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
         redactionOptions = '<div id="redaction_options">';
@@ -243,6 +265,7 @@ $(function() {
         html += '<p id="framization_status"></p><span id="currentFrame">0</span></div>';
         html += '<input type="button" value="Play/Pause" id="play-pause" />';
         html += '<input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" />';
+        html += '<input type="button" value="Do upper body detection (go to start frame first)" id="do_upper_body_detection" />';
         html += '<input type="button" value="Generate the redacted video" id="generate_redacted_video" /></div>';
         html += '<div id="chart"></div>';
         html += '<div id="frame_gallery"></div>';
@@ -770,6 +793,13 @@ $(function() {
         e.stopImmediatePropagation();
     });
     }
+    $('body').on('click', '#do_upper_body_detection', function(e) {
+        alert('clicked');
+        console.log('clicked');
+        console.log(JSON.stringify({'video_id': window.current_video, 'start_frame': window.video.get()}));
+        socket.emit('detect_upper_body', {'video_id': window.current_video, 'start_frame': window.video.get()});
+        console.log('sent');
+    });
 });
     </script>
     <style>
