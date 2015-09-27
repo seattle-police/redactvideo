@@ -18,7 +18,7 @@ var rectThickness = 2;
 
 // get reference to S3 client 
 var s3 = new AWS.S3();
- 
+var detectedRegions = [];
 exports.handler = function(event, context) {
 	// Read options from the event.
 	console.log("Reading options from event:\n", util.inspect(event, {depth: 5}));
@@ -39,17 +39,63 @@ exports.handler = function(event, context) {
 		function tranform(response, next) {
 			cv.readImage(response.Body, function(err, im){
                 console.log('before HS.xml');
-                im.detectObject('HS.xml', {}, function(err, faces) {
+                //im.detectObject('HS.xml', {}, function(err, faces) {
+                im.detectObject('node_modules/opencv/data/haarcascade_upperbody.xml', {}, function(err, faces) {    
                     if (err) throw err;
                     console.log('got pass HS.xml');
-                    var detectedRegions = [];
+                    
                     for (var i = 0; i < faces.length; i++) {
                         console.log('detected');
                         face = faces[i];
-                        detectedRegions.push([face.x, face.y, face.width, face.height]);
+                        detectedRegions.push({'detector': 'upperbody', 'coordinates': [face.x, face.y, face.width, face.height]});
                         //im.rectangle([face.x, face.y], [face.x + face.width, face.y + face.height], rectColor, rectThickness);
                     }
-                    next(null, response.ContentType, im.toBuffer(), detectedRegions);
+                    im.detectObject('node_modules/opencv/data/haarcascade_mcs_upperbody.xml', {}, function(err, faces) {    
+                        if (err) throw err;
+                        console.log('got pass HS.xml');
+                        
+                        for (var i = 0; i < faces.length; i++) {
+                            console.log('detected');
+                            face = faces[i];
+                            detectedRegions.push({'detector': 'mcs_upperbody', 'coordinates': [face.x, face.y, face.width, face.height]});
+                            //im.rectangle([face.x, face.y], [face.x + face.width, face.y + face.height], rectColor, rectThickness);
+                        }
+                        im.detectObject('HS.xml', {}, function(err, faces) {    
+                            if (err) throw err;
+                            console.log('got pass HS.xml');
+                            
+                            for (var i = 0; i < faces.length; i++) {
+                                console.log('detected');
+                                face = faces[i];
+                                detectedRegions.push({'detector': 'hs', 'coordinates': [face.x, face.y, face.width, face.height]});
+                                //im.rectangle([face.x, face.y], [face.x + face.width, face.y + face.height], rectColor, rectThickness);
+                            }
+                            im.detectObject('node_modules/opencv/data/haarcascade_profileface.xml', {}, function(err, faces) {    
+                                if (err) throw err;
+                                console.log('got pass HS.xml');
+                                
+                                for (var i = 0; i < faces.length; i++) {
+                                    console.log('detected');
+                                    face = faces[i];
+                                    detectedRegions.push({'detector': 'profileface', 'coordinates': [face.x, face.y, face.width, face.height]});
+                                    //im.rectangle([face.x, face.y], [face.x + face.width, face.y + face.height], rectColor, rectThickness);
+                                }
+                                im.detectObject('node_modules/opencv/data/haarcascade_frontalface_default.xml', {}, function(err, faces) {    
+                                    if (err) throw err;
+                                    console.log('got pass HS.xml');
+                                    
+                                    for (var i = 0; i < faces.length; i++) {
+                                        console.log('detected');
+                                        face = faces[i];
+                                        detectedRegions.push({'detector': 'frontalface', 'coordinates': [face.x, face.y, face.width, face.height]});
+                                        //im.rectangle([face.x, face.y], [face.x + face.width, face.y + face.height], rectColor, rectThickness);
+                                    }
+                                    next(null, response.ContentType, im.toBuffer(), detectedRegions);
+                                    
+                                });
+                            });
+                        });
+                    });
                 });
             })
             

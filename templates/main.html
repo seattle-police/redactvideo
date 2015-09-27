@@ -166,6 +166,7 @@ $(function() {
         maxFilesize: 5000
     }
     function getFrameCoords(frame) {
+        var colors_for_detectors = {'profileface': 'blue', 'upperbody': 'yellow', 'hs': 'green', 'frontalface': 'orange', 'mcs_upperbody': 'cyan'};
         console.log(frame, Object.keys(window.frame_redactions), window.frame_redactions[frame]);
         frame = parseInt(frame);
         $('.finished_rectangle').hide();
@@ -175,11 +176,14 @@ $(function() {
             console.log('YES '+window.detections);
             boxes = window.detections[frame];
             jQuery.each( boxes, function( i, val ) {
-                $('#video_player_canvas').append('<div class="finished_rectangle detection_boxes" id="detection_'+i+'" style="border:5px solid blue;"></div>');
-                $('#detection_'+i).css('left', val[0]);
-                $('#detection_'+i).css('top', val[1]);
-                $('#detection_'+i).css('width', val[2]);
-                $('#detection_'+i).css('height', val[3]);
+                console.log(JSON.stringify(val));
+                if (val['coordinates'][2] < 175 && val['coordinates'][3] < 175) {
+                    $('#video_player_canvas').append('<div class="finished_rectangle detection_boxes" id="detection_'+i+'" style="border:5px solid '+colors_for_detectors[val['detector']]+';"></div>');
+                    $('#detection_'+i).css('left', val['coordinates'][0]);
+                    $('#detection_'+i).css('top', val['coordinates'][1]);
+                    $('#detection_'+i).css('width', val['coordinates'][2]);
+                    $('#detection_'+i).css('height', val['coordinates'][3]);
+                }
             });
         }
         if (frame in window.frame_redactions) {
@@ -275,7 +279,7 @@ $(function() {
         html += '<th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3>';
         html += '<p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p>';
         html += '<table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
-        $('#video_player_for_manage_videos').html(html);
+        $('#video_player_for_manage_videos table').after(html);
         setTimeout(function() {
             console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
 
@@ -289,7 +293,7 @@ $(function() {
             $('#video_player_canvas').height($('#video_player').height() - 50);
             $('#video_player_canvas').width($('#video_player').innerWidth());
         }, 2000);
-        $('#video_player_for_manage_videos').html(html);
+        //$('#video_player_for_manage_videos').html(html);
         window.currentFrame = $('#currentFrame');
         window.video = VideoFrame({
             id: 'video_player',
@@ -910,6 +914,11 @@ bottom:0px;
 left:0px;
 font-size:0.6em;
 }
+.detection_checkbox {
+width:20px;
+text-align:center;
+vertical-align:center;
+}
     </style>
 </head>
 <body>
@@ -994,7 +1003,14 @@ font-size:0.6em;
     <div id="manage_videos_container" class="container main">
       <h2>Manage videos</h2>
       <div id="video_player_for_manage_videos">
+      <table>
       
+      <tr><td style="background:blue;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Profile face</td>
+      <td style="background:yellow;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Upper body</td>
+      <td style="background:green;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Head/shoulder</td>
+      <td style="background:orange;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Frontal face</td>
+      <td style="background:cyan;" class="detection_checkbox"><input type="checkbox" checked /></td><td>MCS Upperbody</td></tr>
+      </table>
       </div>
       <table id="list_of_videos"><tr><th>Filename</th></tr>
       {% for video in videos %}

@@ -15,6 +15,7 @@ import hashlib
 from flask.ext.socketio import session as socket_session
 conn = r.connect( "localhost", 28015).repl()
 db = r.db('redactvideodotorg')
+conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
 print conn
 import boto
 import boto.awslambda
@@ -29,6 +30,7 @@ from utils.video import put_folder_on_s3
 import thread
 
 def get_setting(setting):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     try:
         return db.table('settings').get(setting).run(conn)['value']   
     except:
@@ -38,6 +40,7 @@ def get_setting(setting):
 # in rc.local there's no wait between starting rethinkdb and
 # starting this script
 while True:
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     try:
         s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
         bucket = s3conn.get_bucket(get_setting('bucket_name'))
@@ -47,9 +50,11 @@ while True:
 
 from upload import upload_to_youtube
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     return ''.join(random.choice(chars) for _ in range(size))
 
 def is_logged_in(request):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     if request.cookies.get('session'):
         if Response(db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']):
             return True
@@ -59,6 +64,7 @@ def is_logged_in(request):
         return False
  
 def get_users_random_id(userid):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     results = list(db.table('random_ids_for_users').filter({'userid': userid}).run(conn))
     if results:
         return results[0]['id']
@@ -69,6 +75,7 @@ def get_users_random_id(userid):
  
 @app.route('/')
 def index():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     context = {}
     context['google_analytics_tracking_id'] = get_setting('google_analytics_tracking_id')
     if is_logged_in(request):
@@ -116,6 +123,7 @@ def index():
 
 @app.route('/convert_every_video_to_h264/', methods=['GET'])         
 def convert_every_video_to_h264():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     for video in bucket.list(userid):
         
@@ -142,6 +150,7 @@ def get_md5(thestr):
     
 @app.route('/generate_thumbs_for_every_video/', methods=['GET'])         
 def generate_thumbs_for_every_video():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     from utils.video import put_folder_on_s3
     userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     for video in bucket.list(userid):
@@ -160,6 +169,7 @@ def generate_thumbs_for_every_video():
     
 @app.route('/youtube_oauth_callback/', methods=['GET']) 
 def youtube_oauth_callback():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     code = request.args['code']
     t = requests.post(
     'https://accounts.google.com/o/oauth2/token',
@@ -172,6 +182,7 @@ def youtube_oauth_callback():
     return render_template("youtube_callback.html")        
 
 def get_users_youtube_token(user_id):    
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     youtube_refresh_token = db.table('users').get(user_id).run(conn)['youtube_refresh_token']
     t = requests.post(
     'https://accounts.google.com/o/oauth2/token',
@@ -182,6 +193,7 @@ def get_users_youtube_token(user_id):
     
 @app.route('/overblur_and_publish_all_videos/')
 def overblur_and_publish_all_videos():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     youtube_token = get_users_youtube_token(user_id)
     for key in bucket.list(user_id):
@@ -195,6 +207,7 @@ def overblur_and_publish_all_videos():
     
 @app.route('/change_site_settings/', methods=['POST'])
 def change_site_settings():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     if is_logged_in(request):
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         user_data = db.table('users').get(user_id).run(conn)
@@ -205,6 +218,7 @@ def change_site_settings():
 
 @app.route('/change_user_settings/', methods=['POST'])
 def change_user_settings():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print 'runns'
     if is_logged_in(request):
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
@@ -226,6 +240,7 @@ def change_user_settings():
 
 @app.route('/get_users_s3_buckets/', methods=['GET'])
 def get_users_s3_buckets():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print 'runns'
     if is_logged_in(request):
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
@@ -238,12 +253,14 @@ def get_users_s3_buckets():
         
 @app.route('/logout/')        
 def logout():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     resp = make_response(redirect('/'))
     resp.set_cookie('session', '', expires=0)
     return resp
         
 @app.route('/create_first_user/', methods=['POST'])
 def create_first_user():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     if db.table('users').count().run(conn) == 0:
         email = request.form['email']
         password = request.form['password']
@@ -262,6 +279,7 @@ def create_first_user():
 
 @app.route('/login/', methods=['POST'])    
 def login():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # it's assumed that a username is an email address
     if not is_already_account(request.form['username']):
         return Response(json.dumps({'msg': '<strong>Error:</strong> Either email or password is incorrect'}), mimetype="application/json")
@@ -290,6 +308,7 @@ def login():
 
 @app.route('/confirm_two_factor/')            
 def confirm_two_factor():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     userid = db.table('two_factor_codes').get(request.args['two_factor_code']).run(conn)['userid']
     user_data = db.table('users').get(userid).run(conn)
     
@@ -301,6 +320,7 @@ def confirm_two_factor():
     return resp
     
 def is_already_account(email):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     if list(db.table('users').filter({'id': email}).run(conn)):
         return True
     return False
@@ -308,6 +328,7 @@ def is_already_account(email):
     
 @app.route('/submit_request_for_account/', methods=['POST'])
 def submit_request_for_account():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     from validate_email import validate_email
     if validate_email(request.form['agency_email'], check_mx=True): # verify=True didn't work
         if is_already_account(request.form['agency_email']):
@@ -344,7 +365,7 @@ def submit_request_for_account():
 
 @app.route('/confirm_account/')
 def confirm_account():
-    
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     userid = db.table('accounts_to_verify').get(request.args['code']).run(conn)['userid']
     db.table('users').get(userid).update({'verified': True}).run(conn)  
     session_id = id_generator(30)
@@ -357,6 +378,7 @@ def confirm_account():
 
 @app.route('/create_password/', methods=['POST'])    
 def create_password():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print request.form['retyped_password']
     if request.form['password'] == request.form['retyped_password']:
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
@@ -375,6 +397,7 @@ def create_password():
 
 @app.route('/autoupdate/', methods=['POST'])
 def autoupdate():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     github_signature = request.headers.get('X-Hub-Signature')
     secret = get_setting('github_auto_update_secret')
     import hmac
@@ -387,6 +410,7 @@ def autoupdate():
     return Response('')
 
 def upload_to_s3(filepath, userid):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import math, os
     import boto
     from filechunkio import FileChunkIO
@@ -421,6 +445,7 @@ def upload_to_s3(filepath, userid):
 
 @app.route('/save_upperbody_detection_coordinates/', methods=['POST'])
 def save_upperbody():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import json
     print request.form
     conn = r.connect( "localhost", 28015).repl()
@@ -430,6 +455,7 @@ def save_upperbody():
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # parse the to email address
     m = re.search('"(?P<email>.*)"', request.form['to'])
     email = m.group('email')
@@ -480,15 +506,18 @@ def incoming_email():
     
 @socketio.on('message')
 def handle_message(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message
     send(message)
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     emit('my response', {'data': 'Connected'})
 
 @socketio.on('framize', namespace='/test')
 def test_message(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message['data']
     video = message['data']
     emit('framization_status', {'data': 'Downloading the video to framize'})
@@ -523,6 +552,7 @@ def test_message(message):
      
     
 def track_object(namespace, frames, start_rectangle, frame, box_id, direction, handle_head_to_side=True, throw_out_weirdness=True):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     conn = r.connect( "localhost", 28015).repl()
     db.table('track_status').insert({'id': box_id, 'stop': False}, conflict='update').run(conn) # this allows us to stop tracking from web interface 
     tracker = dlib.correlation_tracker()
@@ -636,6 +666,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
             #print dir(position)
 @socketio.on('track_forwards_and_backwards', namespace='/test')            
 def track_forwards_and_backwards(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
@@ -685,6 +716,7 @@ def track_forwards_and_backwards(message):
 
 @socketio.on('track_forwards', namespace='/test')            
 def track_forwards(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
@@ -726,6 +758,7 @@ def track_forwards(message):
 
 @socketio.on('track_backwards', namespace='/test')            
 def track_backwards(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
@@ -764,6 +797,7 @@ def track_backwards(message):
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
 
 def generate_redacted_video_thread(namespace, message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import cv2
     coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
     print coords
@@ -825,13 +859,16 @@ def generate_redacted_video_thread(namespace, message):
     
 @socketio.on('generate_redacted_video', namespace='/test') 
 def generate_redacted_video(message):     
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))          
     
 @socketio.on('stop_tracking', namespace='/test')
 def stop_tracking(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     db.table('track_status').get(message['box_id']).update({'stop': True}).run(conn)
 
 def do_detect_upper_body(namespace, video_id, start_frame):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # video_id should be userid/filename
     video_hash = get_md5(video_id)
     s3_prefix = get_md5(video_id)+'_frames'
@@ -840,13 +877,13 @@ def do_detect_upper_body(namespace, video_id, start_frame):
         
         #if i > 10:
         #    return
-        if i % 1800 == 0: # My AWS account is allotted 1,800 lambda functions running at one time running time is about 8 seconds
-            gevent.sleep(10)
+        if i % 1800 == 0: # My AWS account is allotted 1,800 lambda functions running at one time running time is about 40 seconds to be safe wait 60 seconds
+            gevent.sleep(60)
         # To ensure don't rack up huge bill because someone clicked over and over and over
         filename = '%s_frames/%08d.jpg' % (video_hash, frame)
         if db.table('upperbody_detections').get(filename).run(conn):
             print 'already did upper body detection'
-            continue
+            #continue
         lambdaConn = boto.connect_awslambda(get_setting('access_key_id'), get_setting('secret_access_key'), region=boto.awslambda.get_regions('awslambda')[0])
         print i, frame, lambdaConn.invoke_async('detectUpperBody', json.dumps({'filename': filename}))
         
@@ -854,6 +891,7 @@ def do_detect_upper_body(namespace, video_id, start_frame):
 
 @socketio.on('get_upper_body_detections', namespace='/test')
 def get_upper_body_detections(message):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     detections = db.table('upperbody_detections').run(conn)
     detections = [(int(item['id'][item['id'].find('/')+1:item['id'].find('.')]), item['coordinates']) for item in detections]
     print detections
@@ -863,6 +901,7 @@ def get_upper_body_detections(message):
     
 @socketio.on('detect_upper_body', namespace='/test')     
 def detect_upper_body(message): 
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print 'facilitate_detect_upper_body'
     print message 
     thread.start_new_thread(do_detect_upper_body, (request.namespace, message['video_id'], message['start_frame']))
