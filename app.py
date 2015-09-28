@@ -491,7 +491,7 @@ def incoming_email():
         for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
             if not video.endswith('pdf'):
                 upload_to_s3('/home/ubuntu/temp_videos/'+zips_id+'/'+video, userid)
-    else:
+    elif 'as_is_to_' in email:
         youtube_refresh_token = db.table('users').get(userid).run(conn)['youtube_refresh_token']
         t = requests.post(
         'https://accounts.google.com/o/oauth2/token',
@@ -501,6 +501,19 @@ def incoming_email():
         for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
             if not video.endswith('pdf'):
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/'+video, youtube_token)
+    elif 'overblur_to_youtube' in email:
+        youtube_refresh_token = db.table('users').get(userid).run(conn)['youtube_refresh_token']
+        t = requests.post(
+        'https://accounts.google.com/o/oauth2/token',
+        data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'grant_type': 'refresh_token'})
+        data = t.json()
+        youtube_token = get_users_youtube_token(userid)
+        for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
+            if not video.endswith('pdf'): 
+                os.system('ffmpeg -threads 0 -i "/home/ubuntu/temp_videos/%s/%s" -preset ultrafast -vf scale=320:240,"boxblur=6:4:cr=2:ar=2",format=yuv422p  -an "/home/ubuntu/temp_videos/%s/overredacted_%s"' % (zips_id, video, zips_id, video))
+                os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/'+video)
+                os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video)
+                upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video, youtube_token)
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     return Response('')
     
