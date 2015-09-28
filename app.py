@@ -452,6 +452,15 @@ def save_upperbody():
     db.table('upperbody_detections').insert({'id': request.form['filename'], 'coordinates': json.loads(request.form['detected_regions'])}, conflict='update').run(conn)
     print request.form
     return Response('')
+
+def send_short_email(userid, message):    
+    message = sendgrid.Mail()
+    message.add_to(userid)
+    message.set_subject(message)
+    message.set_html(message)
+    message.set_from('no-reply@redactvideo.org')
+    sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
+    status, msg = sg.send(message)
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
@@ -484,7 +493,9 @@ def incoming_email():
         for block in response.iter_content(1024):
             handle.write(block)
     # unzip the file
+    send_short_email(userid, 'Videos received from E.com now unpacking')
     os.system('cd /home/ubuntu/temp_videos/; mkdir zips_id; unzip -d %s -j %s.zip' % (zips_id, zips_id))
+    send_short_email(userid, 'Videos from E.com unpacked')
     # now need to know what to do with the files
     # e.g. put on S3 or on Youtube
     if '_just_copy_over' in email:
@@ -502,6 +513,7 @@ def incoming_email():
             if not video.endswith('pdf'):
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/'+video, youtube_token)
     elif 'overblur_to_youtube' in email:
+        
         youtube_refresh_token = db.table('users').get(userid).run(conn)['youtube_refresh_token']
         t = requests.post(
         'https://accounts.google.com/o/oauth2/token',
@@ -513,7 +525,10 @@ def incoming_email():
                 os.system('ffmpeg -threads 0 -i "/home/ubuntu/temp_videos/%s/%s" -preset ultrafast -vf scale=320:240,"boxblur=6:4:cr=2:ar=2",format=yuv422p  -an "/home/ubuntu/temp_videos/%s/overredacted_%s"' % (zips_id, video, zips_id, video))
                 os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/'+video)
                 os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video)
+                
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video, youtube_token)
+                send_short_email(userid, '%s overblured and uploaded to Youtube' % (video))
+                
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     return Response('')
     
