@@ -453,34 +453,52 @@ def save_upperbody():
     print request.form
     return Response('')
 
-def send_short_email(userid, message):    
+def send_short_email(userid, mes):    
     message = sendgrid.Mail()
     message.add_to(userid)
-    message.set_subject(message)
-    message.set_html(message)
+    message.set_subject(mes)
+    message.set_html(mes)
     message.set_from('no-reply@redactvideo.org')
     sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
     status, msg = sg.send(message)
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
+    import rethinkdb as r
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # parse the to email address
-    m = re.search('"(?P<email>.*)"', request.form['to'])
-    email = m.group('email')
+    print 'to', request.form['to']
+    if request.form['to'].endswith('>'):
+        m = re.search('"(?P<email>.*)"', request.form['to'])
+        email = m.group('email')
+    else:
+        email = request.form['to'].strip('">')
     if not email.endswith('@redactvideo.org'):
         return Response('error')
     userto = email.split('@')[0]
-    users_random_id = userto[:userto.index('_')]
+    print 'userto', userto
+    users_random_id = userto[:userto.index('_')].upper()
     userid = db.table('random_ids_for_users').get(users_random_id).run(conn)['userid']
-    
+    print 'userid', userid
     # download the evidence.com html with the url to download the zip file
-    m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', request.form['text'])
+    print 'txt is next'
+    print request.form
+    body = request.form['html'] if 'html' in request.form else request.form['text']
+    m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', body)
+    if not m:
+        print 'something wrong with email parsing'
+        #send_short_email(userid, 'Something wrong with the authenticated share make sure your share is unauthenticated')
+    else:
+        print 'M', m
     r = requests.get(m.group(0))
+    
+    print 'mgroup0', m.group(0)
     base_url = m.group('base')
     download_html = r.text
+    print download_html
     m = re.search('download_url="(?P<url>.*ver=v2)', download_html)
     zip_download_url = base_url+m.group('url').replace('&amp;', '&')
+    
     print zip_download_url
     # save the zip file
     zips_id = id_generator()
@@ -493,9 +511,9 @@ def incoming_email():
         for block in response.iter_content(1024):
             handle.write(block)
     # unzip the file
-    send_short_email(userid, 'Videos received from E.com now unpacking')
+    #send_short_email(userid, 'Videos received from E.com now unpacking')
     os.system('cd /home/ubuntu/temp_videos/; mkdir zips_id; unzip -d %s -j %s.zip' % (zips_id, zips_id))
-    send_short_email(userid, 'Videos from E.com unpacked')
+    #send_short_email(userid, 'Videos from E.com unpacked')
     # now need to know what to do with the files
     # e.g. put on S3 or on Youtube
     if '_just_copy_over' in email:
@@ -512,8 +530,8 @@ def incoming_email():
         for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
             if not video.endswith('pdf'):
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/'+video, youtube_token)
-    elif 'overblur_to_youtube' in email:
-        
+    #elif 'overblur_to_youtube' in email:
+    else:    
         youtube_refresh_token = db.table('users').get(userid).run(conn)['youtube_refresh_token']
         t = requests.post(
         'https://accounts.google.com/o/oauth2/token',
@@ -523,13 +541,15 @@ def incoming_email():
         for video in os.listdir('/home/ubuntu/temp_videos/'+zips_id):
             if not video.endswith('pdf'): 
                 os.system('ffmpeg -threads 0 -i "/home/ubuntu/temp_videos/%s/%s" -preset ultrafast -vf scale=320:240,"boxblur=6:4:cr=2:ar=2",format=yuv422p  -an "/home/ubuntu/temp_videos/%s/overredacted_%s"' % (zips_id, video, zips_id, video))
-                os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/'+video)
-                os.system('rm /home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video)
                 
                 upload_to_youtube('/home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video, youtube_token)
-                send_short_email(userid, '%s overblured and uploaded to Youtube' % (video))
+                os.system('rm "/home/ubuntu/temp_videos/'+zips_id+'/'+video+'"')
+                os.system('rm "/home/ubuntu/temp_videos/'+zips_id+'/overredacted_'+video+'"')
+                
+                #send_short_email(userid, '%s overblured and uploaded to Youtube' % (video))
                 
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
+    print 'from', request.form['from']
     return Response('')
     
 @socketio.on('message')
