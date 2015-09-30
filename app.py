@@ -487,9 +487,11 @@ def incoming_email():
     m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', body)
     if not m:
         print 'something wrong with email parsing'
-        #send_short_email(userid, 'Something wrong with the authenticated share make sure your share is unauthenticated')
+        send_short_email(userid, 'Something wrong with the authenticated share make sure your share is unauthenticated')
+        return Response('')
     else:
         print 'M', m
+    
     r = requests.get(m.group(0))
     
     print 'mgroup0', m.group(0)
