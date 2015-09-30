@@ -556,7 +556,7 @@ def incoming_email_thread(request):
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
-    thread.start_new_thread(incoming_email_thread, (request))    
+    thread.start_new_thread(incoming_email_thread, (request,))    
     
 @socketio.on('message')
 def handle_message(message):
