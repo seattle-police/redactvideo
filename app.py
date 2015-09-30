@@ -487,7 +487,7 @@ def incoming_email_thread(request):
     if not m:
         print 'something wrong with email parsing'
         send_short_email(userid, 'Something wrong with the authenticated share make sure your share is unauthenticated')
-        return Response('')
+        #return Response('')
     else:
         print 'M', m
     
@@ -551,12 +551,13 @@ def incoming_email_thread(request):
                 
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     print 'from', request.form['from']
-    return Response('')
+    #return Response('')
 
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
     thread.start_new_thread(incoming_email_thread, (request,))    
+    return Response('')
     
 @socketio.on('message')
 def handle_message(message):
