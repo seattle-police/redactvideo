@@ -461,9 +461,8 @@ def send_short_email(userid, mes):
     message.set_from('no-reply@redactvideo.org')
     sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
     status, msg = sg.send(message)
-    
-@app.route('/incoming_email/', methods=['POST'])
-def incoming_email():
+
+def incoming_email_thread(request):
     import rethinkdb as r
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # parse the to email address
@@ -553,6 +552,11 @@ def incoming_email():
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
     print 'from', request.form['from']
     return Response('')
+
+    
+@app.route('/incoming_email/', methods=['POST'])
+def incoming_email():
+    thread.start_new_thread(incoming_email_thread, (request))    
     
 @socketio.on('message')
 def handle_message(message):
