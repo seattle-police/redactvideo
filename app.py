@@ -462,16 +462,16 @@ def send_short_email(userid, mes):
     sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
     status, msg = sg.send(message)
 
-def incoming_email_thread(request):
+def incoming_email_thread(form):
     import rethinkdb as r
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # parse the to email address
-    print 'to', request.form['to']
-    if request.form['to'].endswith('>'):
-        m = re.search('"(?P<email>.*)"', request.form['to'])
+    print 'to', form['to']
+    if form['to'].endswith('>'):
+        m = re.search('"(?P<email>.*)"', form['to'])
         email = m.group('email')
     else:
-        email = request.form['to'].strip('">')
+        email = form['to'].strip('">')
     if not email.endswith('@redactvideo.org'):
         return Response('error')
     userto = email.split('@')[0]
@@ -481,8 +481,8 @@ def incoming_email_thread(request):
     print 'userid', userid
     # download the evidence.com html with the url to download the zip file
     print 'txt is next'
-    print request.form
-    body = request.form['html'] if 'html' in request.form else request.form['text']
+    print form
+    body = form['html'] if 'html' in form else form['text']
     m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', body)
     if not m:
         print 'something wrong with email parsing'
@@ -550,13 +550,13 @@ def incoming_email_thread(request):
                 #send_short_email(userid, '%s overblured and uploaded to Youtube' % (video))
                 
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
-    print 'from', request.form['from']
+    print 'from', form['from']
     #return Response('')
 
     
 @app.route('/incoming_email/', methods=['POST'])
 def incoming_email():
-    thread.start_new_thread(incoming_email_thread, (request,))    
+    thread.start_new_thread(incoming_email_thread, (request.form,))    
     return Response('')
     
 @socketio.on('message')
