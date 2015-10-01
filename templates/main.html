@@ -793,7 +793,7 @@ $(function() {
     });
     $('body').on('click', '#generate_redacted_video', function(e) {
         //console.log('clicked generate');
-        var audio_rections = []
+        var audio_redactions = []
         $('#audio_redaction_table tr').not('.header').each(function(i) {
             audio_redactions.push({'start': $(this).find('.start input').val(), 'stop': $(this).find('.stop input').val()});
         });

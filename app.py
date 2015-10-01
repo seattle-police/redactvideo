@@ -852,6 +852,7 @@ def track_backwards(message):
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
 
 def generate_redacted_video_thread(namespace, message):
+    namespace.emit('framization_status', {'data': 'Generating redacted video'})
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import cv2
     coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
@@ -918,7 +919,8 @@ def generate_redacted_video_thread(namespace, message):
     namespace.emit('framization_status', {'data': 'Uploaded to Youtube'})    
     
 @socketio.on('generate_redacted_video', namespace='/test') 
-def generate_redacted_video(message):     
+def generate_redacted_video(message):
+    print 'generate_redacted_video'     
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))          
     
