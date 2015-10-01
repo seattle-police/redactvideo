@@ -279,7 +279,7 @@ $(function() {
         html += '<h3>Video redactions</h3><table id="video_redaction_table"><tr><th>Color</th><th>Center</th>';
         html += '<th>Start</th><th>Stop</th></tr></table><h3>Audio redactions</h3>';
         html += '<p>Press the letter "a" twice. Once to mark start time. And once again to mark end time.</p>';
-        html += '<table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
+        html += '<table id="audio_redaction_table"><tr class="header"><th></th><th>Start</th><th>Stop</th></table>';
         $('#video_player_for_manage_videos table').after(html);
         setTimeout(function() {
             //console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
@@ -793,7 +793,11 @@ $(function() {
     });
     $('body').on('click', '#generate_redacted_video', function(e) {
         //console.log('clicked generate');
-        socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
+        var audio_rections = []
+        $('#audio_redaction_table tr').not('.header').each(function(i) {
+            audio_redactions.push({'start': $(this).find('.start input').val(), 'stop': $(this).find('.stop input').val()});
+        });
+        socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions, 'audio_redactions': audio_redactions});
         //console.log('pass the emit');
     });
     if (false) {

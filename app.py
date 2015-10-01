@@ -906,8 +906,11 @@ def generate_redacted_video_thread(namespace, message):
     os.system('ffmpeg -start_number 1 -i /home/ubuntu/temp_videos/redacted_%s/%%08d.jpg -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.mp4' % (video_hash, video_hash))
     namespace.emit('framization_status', {'data': 'Video created'})
     userid = message['video_id'][:message['video_id'].index('/')]
-    os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -vn -acodec copy "/home/ubuntu/temp_videos/%s.aac"' % (video_hash, video_hash))
-    os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -i "/home/ubuntu/temp_videos/%s.aac" -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4"' % (video_hash, video_hash, video_hash))
+    os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -y -vn -acodec copy "/home/ubuntu/temp_videos/%s.aac"' % (video_hash, video_hash))
+    audio_redactions = message['audio_redactions']
+    audio_redactions = ','.join(["volume=enable='between(t,%s,%s)':volume=0" % (ar['start'], ar['stop']) for ar in audio_redactions])
+    os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.acc" -y -af "%s" "/home/ubuntu/temp_videos/redacted_%s.aac"' % (video_hash, audio_redactions, video_hash))
+    os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -i "/home/ubuntu/temp_videos/redacted_%s.aac" -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4"' % (video_hash, video_hash, video_hash))
     upload_to_s3('/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4' % (video_hash), userid)
     youtube_token = get_users_youtube_token(userid)
     namespace.emit('framization_status', {'data': 'Uploaded', 'filename': '%s/redacted_with_audio_%s.mp4' % (userid, video_hash)})
