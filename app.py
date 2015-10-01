@@ -910,7 +910,7 @@ def generate_redacted_video_thread(namespace, message):
     os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -i "/home/ubuntu/temp_videos/%s.aac" -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 "/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4"' % (video_hash, video_hash, video_hash))
     upload_to_s3('/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4' % (video_hash), userid)
     youtube_token = get_users_youtube_token(userid)
-    namespace.emit('framization_status', {'data': 'Uploaded', 'filename': '%s/redacted_%s.mp4' % (userid, video_hash)})
+    namespace.emit('framization_status', {'data': 'Uploaded', 'filename': '%s/redacted_with_audio_%s.mp4' % (userid, video_hash)})
     upload_to_youtube('/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4' % (video_hash), youtube_token)
     namespace.emit('framization_status', {'data': 'Uploaded to Youtube'})    
     
