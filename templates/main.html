@@ -838,6 +838,8 @@ width:150px;
 float:right;
 border:1px solid #000;
 position:relative;
+margin:0 0 20px 20px;
+min-height:300px;
 }
 .thumb {
 margin:10px 10px 0 0;
@@ -932,6 +934,9 @@ width:20px;
 text-align:center;
 vertical-align:center;
 }
+.highlight {
+background:yellow;
+}
     </style>
 </head>
 <body>
@@ -949,11 +954,9 @@ vertical-align:center;
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav main-nav">
             
-            <li><a href="#upload_videos">Upload videos</a></li>
-            <li><a href="#manage_videos">Manage videos</a></li>
-            <li><a href="#manage_publication">Manage publication</a></li>
-            <li><a href="#do_bulk_over_blur">Do bulk over-blur</a></li>
-            <li><a href="#do_precise_redaction">Do precise redaction</a></li>
+            <li><a href="#upload_videos">Do bulk over-redaction</a></li>
+            <li><a href="#manage_videos">Do precise redaction</a></li>
+            <li><a href="#publish_unredacted_videos">Publish unredacted videos</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
                 {% if is_admin %}
@@ -979,8 +982,7 @@ vertical-align:center;
     </nav>
 
     <div id="upload_videos_container" class="container main">
-    <h2>Upload videos</h2>
-    <p><strong>Note:</strong> Videos are converted to the H.264 video format. This way they can be played back in the browser without using Adobe Flash.</p>
+    <h2>Do bulk over-redaction</h2>
       <h3>Upload from your computer</h3>
       <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
         <input type="hidden" name="key" value="{{ userid }}/${filename}">
@@ -992,18 +994,12 @@ vertical-align:center;
       </form>
             
     
-    <h3>Copy videos from evidence.com to RedactVideo</h3>
+    <h3>Copy videos from Evidence.com</h3>
     <p>Read page 90 of <a href="http://public.evidence.com/help/pdfs/latest/EVIDENCE.com+Administrator+Reference+Guide.pdf">Evidence.com's reference guide</a> for 
     instructions on sending unauthenticated downloads. Select the audit trail checkbox.</p>
     <h4>Overblur and post on Youtube and immediately delete from RedactVideo.org</h4>
     <p><strong>Send unauthenticated download link to:</strong> {{ users_random_id }}_overblur_to_youtube@redactvideo.org<br/>
     </p>
-    <h4>Just copy over to RedactVideo</h4>
-    <p><strong>Send unauthenticated download link to:</strong> {{ users_random_id }}_just_copy_over@redactvideo.org</p>
-    <h4>Upload as is to Youtube</h4>
-    <p>For situations where you want to post unredacted videos on Youtube or
-    want to do the redaction on Evidence.com but post on Youtube.</p>
-    <p><strong>Send unauthenticated download link to:</strong> {{ users_random_id }}_as_is_to_youtube@redactvideo.org</p>
     <!--
     <h3>Connect RedactVideo to your own Amazon S3 bucket</h3>
     <div id="google_api_settings">
@@ -1019,7 +1015,7 @@ vertical-align:center;
     
     
     <div id="manage_videos_container" class="container main">
-      <h2>Manage videos</h2>
+      <h2>Do precise redaction</h2>
       <div id="video_player_for_manage_videos">
       <table>
       
@@ -1030,6 +1026,25 @@ vertical-align:center;
       <td style="background:cyan;" class="detection_checkbox"><input type="checkbox" checked /></td><td>MCS Upperbody</td></tr>
       </table>
       </div>
+      <p><strong>Note:</strong> Videos are converted to the H.264 video format. This way they can be played back in the browser without using Adobe Flash.</p>
+    
+      <h3>Upload from your computer</h3>
+      <form action="https://{{ upload['bucket_name'] }}.s3-us-west-2.amazonaws.com/" id="dropzone" class="dropzone">
+        <input type="hidden" name="key" value="{{ userid }}/${filename}">
+        <input type="hidden" name="AWSAccessKeyId" value="{{ upload['access_key_id'] }}">
+        <input type="hidden" name="acl" value="public-read">
+        <input type="hidden" name="policy" value="{{ upload['policy'] }}">
+        <input type="hidden" name="signature" value="{{ upload['signature'] }}">
+        <div class="dz-message" data-dz-message><span>Drag videos to this box or click here to upload videos.</span></div>
+      </form>
+            
+    
+    <h3>Copy videos from evidence.com to RedactVideo</h3>
+    <p>Read page 90 of <a href="http://public.evidence.com/help/pdfs/latest/EVIDENCE.com+Administrator+Reference+Guide.pdf">Evidence.com's reference guide</a> for 
+    instructions on sending unauthenticated downloads. Select the audit trail checkbox.</p>
+    
+    <p><strong>Send unauthenticated download link to:</strong> {{ users_random_id }}_just_copy_over@redactvideo.org</p>
+    <h3>Select a video already on RedactVideo</h3>
       <table id="list_of_videos"><tr><th>Filename</th></tr>
       {% for video in videos %}
       <tr><td><a href="#{{ video['name'] }}" data-hash="{{ video['hash'] }}">{{ video['name'] }}</a></td></tr>
@@ -1037,20 +1052,14 @@ vertical-align:center;
       </table>
       
     </div>
-    <div id="manage_publication_container" class="container main">
-      <h2>Manage publication</h2>
-      <h3>Youtube connection</h3>
-      <p>{% if has_authed_with_youtube %}
-      <a href="https://accounts.google.com/o/oauth2/auth?
-client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
-redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
-scope=https://www.googleapis.com/auth/youtube.upload&
-response_type=code" target="_blank">Click here</a> to reauthenticate with Youtube.
-      {% else %}<a href="https://accounts.google.com/o/oauth2/auth?
-client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
-redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
-scope=https://www.googleapis.com/auth/youtube.upload&
-response_type=code" target="_blank">Click here</a> to authenticate with Youtube.{% endif %}</p>
+    
+    <div id="publish_unredacted_videos_container" class="container main">
+      <h2>Publish unredacted videos</h2>
+      <p>For major events like protests lots of requests will be made for the videos. Protest videos typically can't be redacted when
+      complying with the Washington State Public Records Act. So an agency may elect to simply post the unredacted videos on Youtube.</p>
+      <p>To publish unredacted videos from Evidence.com to your Youtube account, do an unauthenticated share to 
+      <span class="highlight">{{ users_random_id }}_as_is_to_youtube@redactvideo.org</span> See page 90 of <a href="http://public.evidence.com/help/pdfs/latest/EVIDENCE.com+Administrator+Reference+Guide.pdf">Evidence.com's reference guide</a> for 
+    instructions on sending unauthenticated downloads. Select the audit trail checkbox to have the videos properly named.</p>
     </div>
     <div id="do_bulk_over_blur_container" class="container main">
       <h2>Do bulk over-blur</h2>
@@ -1114,6 +1123,18 @@ response_type=code" target="_blank">Click here</a> to authenticate with Youtube.
     </div>
     <div id="my_account_container" class="container main">
     <h2>My account</h2>
+      <h3>Youtube connection</h3>
+      <p>{% if has_authed_with_youtube %}
+      <a href="https://accounts.google.com/o/oauth2/auth?
+client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
+redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
+scope=https://www.googleapis.com/auth/youtube.upload&
+response_type=code" target="_blank">Click here</a> to reauthenticate with Youtube.
+      {% else %}<a href="https://accounts.google.com/o/oauth2/auth?
+client_id={{ google_client_id }}&approval_prompt=force&access_type=offline&
+redirect_uri=http%3A%2F%2Fredactvideo.org%2Fyoutube_oauth_callback%2F&
+scope=https://www.googleapis.com/auth/youtube.upload&
+response_type=code" target="_blank">Click here</a> to authenticate with Youtube.{% endif %}</p>
       <h3>Change password</h3>
       <p><strong class="warning">IMPORTANT SECURITY ADVICE:</strong> <ol><li>Make your password significantly different from 
       any you have ever used. Doing so 
