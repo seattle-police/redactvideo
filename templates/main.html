@@ -178,7 +178,7 @@ $(function() {
             jQuery.each( boxes, function( i, val ) {
                 console.log(JSON.stringify(val));
                 if (val['coordinates'][2] < 175 && val['coordinates'][3] < 175) {
-                    $('#video_player_canvas').append('<div class="finished_rectangle detection_boxes" id="detection_'+i+'" style="border:5px solid '+colors_for_detectors[val['detector']]+';"></div>');
+                    $('#video_player_canvas').append('<div class="detection_boxes" id="detection_'+i+'" style="border-color:'+colors_for_detectors[val['detector']]+';"></div>');
                     $('#detection_'+i).css('left', val['coordinates'][0]);
                     $('#detection_'+i).css('top', val['coordinates'][1]);
                     $('#detection_'+i).css('width', val['coordinates'][2]);
@@ -804,6 +804,9 @@ $(function() {
         socket.emit('detect_upper_body', {'video_id': window.current_video, 'start_frame': window.video.get()});
         console.log('sent');
     });
+    $('body').on('hover', '.detection_boxes', function(e) {
+        alert('hover');
+    });
 });
     </script>
     <style>
@@ -848,6 +851,16 @@ float:left;
     position: absolute;
     opacity: 0.8;
     background:#181818;
+}
+.detection_boxes {
+position: absolute;
+    opacity: 0.8;
+    background:#181818;
+    border-size:5px;
+border-style:solid;
+    }
+.detection_boxes:hover {
+border-size:10px;
 }
     #video_player_canvas {
     position:absolute;
