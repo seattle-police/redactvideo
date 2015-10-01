@@ -962,5 +962,15 @@ def detect_upper_body(message):
     thread.start_new_thread(do_detect_upper_body, (request.namespace, message['video_id'], message['start_frame']))
     
     
+    
+@socketio.on('broadcast', namespace='/broadcast_everything')     
+def broadcast(message):    
+    emit('broadcast', message, broadcast=True)
+
+@app.route('/broadcast_everything/', methods=['GET'])         
+def broadcast_everything():
+    
+    return render_template('broadcast_everything.html')
+    
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=80)
