@@ -178,13 +178,14 @@ $(function() {
             jQuery.each( boxes, function( i, val ) {
                 console.log(JSON.stringify(val));
                 if (val['coordinates'][2] < 175 && val['coordinates'][3] < 175) {
-                    $('#video_player_canvas').append('<div class="detection_boxes" id="detection_'+i+'" style="border-color:'+colors_for_detectors[val['detector']]+';"></div>');
+                    $('#video_player_canvas').append('<div class="detection_boxes detector_'+val['detector']+'" id="detection_'+i+'" style="border-color:'+colors_for_detectors[val['detector']]+';"></div>');
                     $('#detection_'+i).css('left', val['coordinates'][0]);
                     $('#detection_'+i).css('top', val['coordinates'][1]);
                     $('#detection_'+i).css('width', val['coordinates'][2]);
                     $('#detection_'+i).css('height', val['coordinates'][3]);
                 }
             });
+            $('.detection_checkbox input').trigger('change');
         }
         if (frame in window.frame_redactions) {
             
@@ -306,6 +307,7 @@ $(function() {
         $("#video_player")[0].onplay = function ()  {
             console.debug("Video playing");
             //window.video.stopListen();
+            window.video_is_playing = true;
             window.video.listen('frame');
         };
         $("#video_player")[0].onseeked = function () {
@@ -315,6 +317,7 @@ $(function() {
             getFrameCoords(window.video.get());
         };
         $("#video_player")[0].onpause = function ()  {
+            window.video_is_playing = false;
             console.debug("Video paused");
             //window.video.stopListen();
             getFrameCoords(window.video.get());
@@ -682,7 +685,13 @@ $(function() {
         } else if (e.keyCode == 39) {
             window.video.seekForward()
         } else if (e.keyCode == 37) {
-            window.video.seekBackward()
+            //if video playing then seek 5 seconds prior
+            if (window.video_is_playing) {
+                window.video.seekBackward(window.video.get()-(24*5))
+            } else {
+                //else go back one frame            
+                window.video.seekBackward()
+            }
         }
     });
     //            $('#'+element.id).append('<input type="button" class="track_forwards first_question" value="Track forwards" />');
@@ -806,6 +815,13 @@ $(function() {
     });
     $('body').on('hover', '.detection_boxes', function(e) {
         alert('hover');
+    });
+    $('body').on('change', '.detection_checkbox input', function() {
+        if($(this).is(":checked")) {
+            $('.detector_'+$(this).val()).show();
+        } else {
+            $('.detector_'+$(this).val()).hide();
+        }        
     });
 });
     </script>
@@ -1019,11 +1035,11 @@ background:yellow;
       <div id="video_player_for_manage_videos">
       <table>
       
-      <tr><td style="background:blue;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Profile face</td>
-      <td style="background:yellow;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Upper body</td>
-      <td style="background:green;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Head/shoulder</td>
-      <td style="background:orange;" class="detection_checkbox"><input type="checkbox" checked /></td><td>Frontal face</td>
-      <td style="background:cyan;" class="detection_checkbox"><input type="checkbox" checked /></td><td>MCS Upperbody</td></tr>
+      <tr><td style="background:blue;" class="detection_checkbox"><input type="checkbox" value="profileface" checked /></td><td>Profile face</td>
+      <td style="background:yellow;" class="detection_checkbox"><input type="checkbox" value="upperbody" checked /></td><td>Upper body</td>
+      <td style="background:green;" class="detection_checkbox"><input type="checkbox" value="hs" checked /></td><td>Head/shoulder</td>
+      <td style="background:orange;" class="detection_checkbox"><input type="checkbox" value="frontalface" checked /></td><td>Frontal face</td>
+      <td style="background:cyan;" class="detection_checkbox"><input type="checkbox" value="mcs_upperbody" checked /></td><td>MCS Upperbody</td></tr>
       </table>
       </div>
       <p><strong>Note:</strong> Videos are converted to the H.264 video format. This way they can be played back in the browser without using Adobe Flash.</p>
