@@ -51,13 +51,13 @@ function selectContainer(containerName) {
 $(function() {
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
     socket.on('connect', function() {
-        console.log('connected');
+        //console.log('connected');
         socket.emit('my event', {
             data: 'I\'m connected!'
         });
     });
     socket.on('my response', function(msg) {
-        console.log('<p>Received: ' + msg.data + '</p>');
+        //console.log('<p>Received: ' + msg.data + '</p>');
     });
     socket.on('upper_body_detections', function(msg) {
         
@@ -67,10 +67,10 @@ $(function() {
     });
     socket.on('redaction_video_id', function(msg) {
         window.redaction_video_id = msg.data;
-        console.log('Redaction video id: ' + msg.data + '</p>');
+        //console.log('Redaction video id: ' + msg.data + '</p>');
     });
     socket.on('framization_status', function(msg) {
-        console.log(JSON.stringify(msg));
+        //console.log(JSON.stringify(msg));
         $('#framization_status').text(msg.data);
         if (msg.data == 'Uploaded') {
             var url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + msg['filename'];
@@ -78,10 +78,10 @@ $(function() {
         }
     });
     socket.on('track_result', function(msg) {
-        console.log(msg);
+        //console.log(msg);
         var coordict = {};
         coordict[msg['box_id']] = msg['coordinates'];
-        console.log('coordict '+coordict);
+        //console.log('coordict '+coordict);
         frame = parseInt(msg['frame']);
         if (frame in window.frame_redactions) {
             window.frame_redactions[parseInt(msg['frame'])][msg['box_id']] = msg['coordinates'];
@@ -167,16 +167,16 @@ $(function() {
     }
     function getFrameCoords(frame) {
         var colors_for_detectors = {'profileface': 'blue', 'upperbody': 'yellow', 'hs': 'green', 'frontalface': 'orange', 'mcs_upperbody': 'cyan'};
-        console.log(frame, Object.keys(window.frame_redactions), window.frame_redactions[frame]);
+        //console.log(frame, Object.keys(window.frame_redactions), window.frame_redactions[frame]);
         frame = parseInt(frame);
         $('.finished_rectangle').hide();
         $('.resize').hide();
         $('.detection_boxes').remove();
         if (frame in window.detections) {
-            console.log('YES '+window.detections);
+            //console.log('YES '+window.detections);
             boxes = window.detections[frame];
             jQuery.each( boxes, function( i, val ) {
-                console.log(JSON.stringify(val));
+                //console.log(JSON.stringify(val));
                 if (val['coordinates'][2] < 175 && val['coordinates'][3] < 175) {
                     $('#video_player_canvas').append('<div class="detection_boxes detector_'+val['detector']+'" id="detection_'+i+'" style="border-color:'+colors_for_detectors[val['detector']]+';"></div>');
                     $('#detection_'+i).css('left', val['coordinates'][0]);
@@ -218,11 +218,11 @@ $(function() {
                 var left = parseFloat(element.style.left.slice(0, -2));
                 var width = parseFloat(element.style.width.slice(0, -2));
                 var height = $('#' + element.id).height();
-                console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
-                console.log('color ', element.style.borderColor);
+                //console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+                //console.log('color ', element.style.borderColor);
                 window.redactionIdToColor[element.id] = element.style.borderColor;
                 var color = element.style.borderColor;
-                console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+                //console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
                 // top left
                 $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
                 // top right
@@ -237,7 +237,7 @@ $(function() {
             //window.frame_redactions[frame];
         }
         
-        window.currentFrame.html(frame);
+        window.currentFrame.html('<strong>Frame:</strong> '+frame+' <strong>Seconds:</strong> '+$('#video_player').get(0).currentTime);
     }
     
     $('#list_of_videos a').click(function(e) {
@@ -282,13 +282,13 @@ $(function() {
         html += '<table id="audio_redaction_table"><tr><th></th><th>Start</th><th>Stop</th></table>';
         $('#video_player_for_manage_videos table').after(html);
         setTimeout(function() {
-            console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
+            //console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
 
             $('#video_player_for_manage_videos').height($('#video_player').height());
             $('#video_player_for_manage_videos').width($('#video_player').width());
-            console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
+            //console.log('inner height ' + $('#video_player').innerHeight() + ' ' + $('#video_player').height() + ' ' + $('#video_player').innerWidth() + ' ' + $('#video_player').width());
 
-            console.log($('#video_player_for_manage_videos').width());
+            //console.log($('#video_player_for_manage_videos').width());
             
             //$('#video_player_canvas').css('border', '5px solid red');
             $('#video_player_canvas').height($('#video_player').height() - 50);
@@ -336,7 +336,7 @@ $(function() {
 
 
     $('body').on('click', '#play-pause', function() {
-        console.log(JSON.stringify(window.video));
+        //console.log(JSON.stringify(window.video));
 
         if ($('#video_player').get(0).paused) {
             $('#video_player').get(0).play();
@@ -386,17 +386,17 @@ $(function() {
                  
                 // I have a hard time wrapping my head around the math for this
                 // below works if window.x == 'left' and window.y == 'top' and mouse.x > mouse.startX
-                console.log('TRUTH:');
+                //console.log('TRUTH:');
                 a = (window.x == 'right');
                 b = (window.y == 'bottom');
                 c = (mouse.x > (mouse.startX + mouse.width));
                 d = (mouse.y > (mouse.startY + mouse.height));
                 
-                console.log(a + ' ' + b + ' ' + c + ' ' + d); 
-                console.log(window.x + ' ' + window.y);
+                //console.log(a + ' ' + b + ' ' + c + ' ' + d); 
+                //console.log(window.x + ' ' + window.y);
                 
                 //console.log((window.x == 'right') + (window.y == 'top') + (mouse.x > (mouse.startX + mouse.width)) + (mouse.y > (mouse.startY + mouse.height)));
-                console.log(mouse.x + ' ' + (mouse.startX + mouse.width) + ' ' + mouse.y + ' ' + (mouse.startY + mouse.height));
+                //console.log(mouse.x + ' ' + (mouse.startX + mouse.width) + ' ' + mouse.y + ' ' + (mouse.startY + mouse.height));
                 if (window.x == 'left' && window.y == 'top' && mouse.x <= mouse.startX && mouse.y <= mouse.startY) {
                     element.style.width = mouse.width + Math.abs(mouse.x - mouse.startX) + 'px';
                     element.style.height = mouse.height + Math.abs(mouse.y - mouse.startY) + 'px';
@@ -444,11 +444,11 @@ $(function() {
                 var left = parseFloat(element.style.left.slice(0, -2));
                 var width = parseFloat(element.style.width.slice(0, -2));
                 var height = $('#' + element.id).height();
-                console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
-                console.log('color ', element.style.borderColor);
+                //console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+                //console.log('color ', element.style.borderColor);
                 window.redactionIdToColor[element.id] = element.style.borderColor;
                 var color = element.style.borderColor;
-                console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+                //console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
                 // top left
                 $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
                 // top right
@@ -468,11 +468,11 @@ $(function() {
         var left = parseFloat(element.style.left.slice(0, -2));
         var width = parseFloat(element.style.width.slice(0, -2));
         var height = $('#' + element.id).height();
-        console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
-        console.log('color ', element.style.borderColor);
+        //console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+        //console.log('color ', element.style.borderColor);
         window.redactionIdToColor[element.id] = element.style.borderColor;
         var color = element.style.borderColor;
-        console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+        //console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
         // top left
         $('#video_player_canvas').append('<div id="top_left_for_' + element.id + '" data-x="left" data-y="top" data-box-id="' + element.id + '" class="top_left resize" style="top:' + (top - 3) + 'px;left:' + (left - 3) + 'px;position:absolute;height:6px;width:6px;background:' + color + ';"></div>');
         // top right
@@ -492,10 +492,10 @@ $(function() {
         if (window.mode != 'resize') {
             window.x = $(this).attr('data-x');
             window.y = $(this).attr('data-y');
-            console.log('clicked resize');
+            //console.log('clicked resize');
             window.mode = 'resize';
             window.resizeId = $(this).attr('data-box-id');
-            console.log('THE RESIZE ID: ' + window.resizeId);
+            //console.log('THE RESIZE ID: ' + window.resizeId);
             mouse.startX = $('#' + window.resizeId).position().left;
             mouse.height = $('#' + window.resizeId).height();
             mouse.width = $('#' + window.resizeId).width();
@@ -509,11 +509,11 @@ $(function() {
             var left = parseFloat(element.style.left.slice(0, -2));
             var width = parseFloat(element.style.width.slice(0, -2));
             var height = $('#' + element.id).height();
-            console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
-            console.log('color ', element.style.borderColor);
+            //console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+            //console.log('color ', element.style.borderColor);
             window.redactionIdToColor[element.id] = element.style.borderColor;
             var color = element.style.borderColor;
-            console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+            //console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
             // top left
             $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
             // top right
@@ -544,7 +544,7 @@ $(function() {
         $('#top_right_for_'+id).remove();
         $('#bottom_right_for_'+id).remove();
         $('#bottom_left_for_'+id).remove();
-        console.log('current video '+window.video.get()+' '+window.frame_redactions[window.video.get()]);
+        //console.log('current video '+window.video.get()+' '+window.frame_redactions[window.video.get()]);
         delete window.frame_redactions[window.video.get()][id];
         
     });
@@ -557,7 +557,7 @@ $(function() {
     $('body').on('click', '#video_player_canvas', function(e) {
         if (mode == 'none') {
             $('#video_player').get(0).pause();
-            console.log('canvas onclick fired');
+            //console.log('canvas onclick fired');
             if (element !== null) {
                 element.className = 'finished_rectangle';
                 $('#'+element.id).append('<input type="button" class="track_forwards_and_backwards first_question" value="Track forwards and backwards" />');
@@ -595,11 +595,11 @@ $(function() {
                 $('#frame_'+frame).css('padding', padding+'px');
                 $('#frame_'+frame).height(ele.height()+padding+padding);
                 $('#frame_'+frame).width(ele.width()+padding+padding);
-                console.log((-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px')
+                //console.log((-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px')
                 $('#frame_'+frame).css('background-position', (-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px');
                 $('#frame_'+frame).find('.redaction_preview').css({'width': ele.width(), 'height': ele.height()});
                 element = null;
-                console.log("finsihed.");
+                //console.log("finsihed.");
                 $(this).removeClass('testing');
                 $(this).addClass('training');
                 $(this).addClass('new_training');
@@ -612,9 +612,9 @@ $(function() {
                 //socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': box_id, 'coordinates': frame_coordinates});
                 //$.post('/add_to_training/', {'image': $(this).css('background'), 'coordinates': JSON.stringify(coordinates)});
             } else {
-                console.log("begun.");
+                //console.log("begun.");
 
-                console.log(mouse.y);
+                //console.log(mouse.y);
                 mouse.startX = mouse.x;
                 mouse.startY = mouse.y;
                 element = document.createElement('div');
@@ -637,11 +637,11 @@ $(function() {
             var left = parseFloat(element.style.left.slice(0, -2));
             var width = parseFloat(element.style.width.slice(0, -2));
             var height = $('#' + element.id).height();
-            console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
-            console.log('color ', element.style.borderColor);
+            //console.log('top: ' + top + ' left: ' + left + ' width: ' + width + ' height: ' + height);
+            //console.log('color ', element.style.borderColor);
             window.redactionIdToColor[element.id] = element.style.borderColor;
             var color = element.style.borderColor;
-            console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
+            //console.log(parseFloat(element.style.left.slice(0, -2)), element.style.left);
             // top left
             $('#top_left_for_' + element.id).css({'top': (top - 3) + 'px', 'left': (left - 3) + 'px'});
             // top right
@@ -664,13 +664,20 @@ $(function() {
             //$('#'+window.resizeId).css({'
         }
     });
+    $('body').on('click', '.play_audio', function() {
+        window.video.seekTo({'seconds': $(this).parent().next().find('input').val()});
+    });
+    $('body').on('click', '.remove_audio_redaction', function() {
+        $(this).parent().parent().remove();
+    });
+    
     $('body').keyup(function(e) {
         if (e.keyCode == 65) { // letter a
             // user has pressed space
             currentTime = $('#video_player').get(0).currentTime - 1;
             if (window.audio_redaction_state == 'start') {
                 window.audio_redaction_state = 'stop';
-                var html = '<tr><td><input type="button" value="Play" class="play_audio" /><input type="button" value="Remove" /></td><td class="start"><input type="text" value="' + currentTime + '" /></td><td class="stop"><input type="text" value="" /></td></tr>';
+                var html = '<tr><td><input type="button" value="Play" class="play_audio" /><input type="button" value="Remove" class="remove_audio_redaction" /></td><td class="start"><input type="text" value="' + currentTime + '" /></td><td class="stop"><input type="text" value="" /></td></tr>';
                 $('#audio_redaction_table').append(html);
             } else {
                 window.audio_redaction_state = 'start';
@@ -687,7 +694,8 @@ $(function() {
         } else if (e.keyCode == 37) {
             //if video playing then seek 5 seconds prior
             if (window.video_is_playing) {
-                window.video.seekBackward(window.video.get()-(24*5))
+                window.video.seekBackward(24*5);
+                $('#video_player').get(0).play();
             } else {
                 //else go back one frame            
                 window.video.seekBackward()
@@ -760,13 +768,13 @@ $(function() {
     });
     // redact_for_time_period
     $('body').on('click', '.redact_for_time_period', function(e) {
-        console.log('clicked redact for time period');
+        //console.log('clicked redact for time period');
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
         var total_frames = $('#video_player').get(0).duration * 30;
         var current_frame = window.video.get();
-        console.log((ele.position().left)+'px '+(ele.position().top));
-        console.log('-'+(ele.position().left-20)+'px -'+(ele.position().top-20));
+        //console.log((ele.position().left)+'px '+(ele.position().top));
+        //console.log('-'+(ele.position().left-20)+'px -'+(ele.position().top-20));
         var padding = 0;
         for (var i=0;i<30*30;i++) {
             var frame = i + current_frame;
@@ -775,7 +783,7 @@ $(function() {
             $('#frame_'+frame).css('padding', padding+'px');
             $('#frame_'+frame).height(ele.height()+padding+padding);
             $('#frame_'+frame).width(ele.width()+padding+padding);
-            console.log((-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px')
+            //console.log((-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px')
             $('#frame_'+frame).css('background-position', (-1*(ele.position().left-padding))+'px '+(-1*(ele.position().top-padding))+'px');
             $('#frame_'+frame).find('.redaction_preview').css({'width': ele.width(), 'height': ele.height()});
         }
@@ -784,9 +792,9 @@ $(function() {
         e.stopImmediatePropagation();
     });
     $('body').on('click', '#generate_redacted_video', function(e) {
-        console.log('clicked generate');
+        //console.log('clicked generate');
         socket.emit('generate_redacted_video', {'video_id': window.current_video, 'coordinates': window.frame_redactions});
-        console.log('pass the emit');
+        //console.log('pass the emit');
     });
     if (false) {
     $('body').on('click', '.frame_preview', function(e) {
@@ -808,10 +816,10 @@ $(function() {
     }
     $('body').on('click', '#do_upper_body_detection', function(e) {
         alert('clicked');
-        console.log('clicked');
-        console.log(JSON.stringify({'video_id': window.current_video, 'start_frame': window.video.get()}));
+        //console.log('clicked');
+        //console.log(JSON.stringify({'video_id': window.current_video, 'start_frame': window.video.get()}));
         socket.emit('detect_upper_body', {'video_id': window.current_video, 'start_frame': window.video.get()});
-        console.log('sent');
+        //console.log('sent');
     });
     $('body').on('hover', '.detection_boxes', function(e) {
         alert('hover');
