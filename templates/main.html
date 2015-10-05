@@ -247,7 +247,7 @@ $(function() {
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
         window.video_hash = hash;
-        socket.emit('get_upper_body_detections', {data: ''});
+        socket.emit('get_upper_body_detections', {video: hash});
         window.current_video = userid+'/'+$(this).attr('href').slice(1);
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
         redactionOptions = '<div id="redaction_options">';

@@ -956,7 +956,7 @@ def do_detect_upper_body(namespace, video_id, start_frame):
 def get_upper_body_detections(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     detections = db.table('upperbody_detections').run(conn)
-    detections = [(int(item['id'][item['id'].find('/')+1:item['id'].find('.')]), item['coordinates']) for item in detections]
+    detections = [(int(item['id'][item['id'].find('/')+1:item['id'].find('.')]), item['coordinates']) for item in detections if item.startswith(message['video'])]
     print detections
     for item in detections:
         emit('upper_body_detections', {'frame': item[0], 'detections': item[1]})
