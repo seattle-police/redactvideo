@@ -571,7 +571,7 @@ def test_connect():
     emit('my response', {'data': 'Connected'})
 
 @socketio.on('framize', namespace='/test')
-def test_message(message):
+def framize(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     print message['data']
     video = message['data']
@@ -960,7 +960,7 @@ def get_upper_body_detections(message):
     print detections
     for item in detections:
         emit('upper_body_detections', {'frame': item[0], 'detections': item[1]})
-    
+     
     
 @socketio.on('detect_upper_body', namespace='/test')     
 def detect_upper_body(message): 
