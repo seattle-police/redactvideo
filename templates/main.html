@@ -711,7 +711,8 @@ $(function() {
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
         $('#video_player_canvas').append('<p class="track_status" id="track_status_for_'+ele.attr('id')+'">Tracking status<br/><strong>Backwards:</strong> <span class="backwards"></span> <strong>Forwards:</strong> <span class="forwards"></span></p>');    
-        socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt(window.video.get()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+        console.log(parseInt(window.video.get()));
+		socket.emit('track_forwards_and_backwards', {'video_id': window.current_video, 'frame': parseInt(window.video.get()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
         //$('#track_status_for_'+ele.attr('id')).css('top', );
         var coord = window.frame_redactions[frame][window.video.get()];
         $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);

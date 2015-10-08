@@ -5,3 +5,4 @@ validate_email
 pyDNS
 scikit-image
 youtube_dl
+git+git://github.com/erans/ec2instancespricing.git
