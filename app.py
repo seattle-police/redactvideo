@@ -582,11 +582,15 @@ def framize(message):
     target_dir = '/home/ubuntu/temp_videos/%s' % (random_filename)
     if os.path.isdir(target_dir):
         emit('framization_status', {'data': 'Already framized. Ready to redact.'})
+        
         return
     os.system('mkdir "%s"' % (target_dir))
     bucket.get_key(video).get_contents_to_filename(video_path)
     emit('framization_status', {'data': 'Starting framization'})
     os.system('ffmpeg -i "%s" -y "%s/%%08d.jpg" 1>&- 2>&-  &' % (video_path, target_dir))
+    os.system('mkdir %s_contour' % (target_dir))
+    os.system('ffmpeg -i "%s" -y -preset ultrafast -vf "edgedetect=low=0.25:high=0.5",format=yuv422p -an %s' % (video_path, video_path[:-4]+'_contour.mp4'))
+    os.system('ffmpeg -i "%s" -y "%s_contour/%%08d.jpg"' % (video_path[:-4]+'_contour.mp4', target_dir))
     #os.system('ffmpeg -i "%s" -y "%s/%%08d.jpg" &' % (video_path, target_dir))
     
     number_of_frames = os.popen("ffprobe -select_streams v -show_streams /home/ubuntu/temp_videos/%s.mp4 2>/dev/null | grep nb_frames | sed -e 's/nb_frames=//'" % (random_filename)).read()
@@ -747,13 +751,13 @@ def track_forwards_and_backwards(message):
         end = total_frames
     # remove later 
     end = total_frames
-    forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
+    forward_frames = ['/home/ubuntu/temp_videos/%s_contour/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
     if frame - plusminusframes > 0:
         end = frame - plusminusframes
     else:
         end = 0
     end = 0 
-    backward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
+    backward_frames = ['/home/ubuntu/temp_videos/%s_contour/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
     print forward_frames
     #print frames
     forward_positions = []
@@ -763,7 +767,9 @@ def track_forwards_and_backwards(message):
     start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
     print start_rectangle
     import thread
-     
+    #bbox = '%s,%s,%s,%s' % (c['left'], c['top'], c['right'] - c['left'], c['bottom'] - c['top'])
+    #print 'python ../CMT/run.py --quiet --no-preview --skip %s --bbox %s ../temp_videos/aba2eafda7e4e086fcab262c792e757e/{:08d}.jpg' % (frame, bbox)
+    #os.system('python ../CMT/run.py --quiet --no-preview --skip %s --bbox %s ../temp_videos/aba2eafda7e4e086fcab262c792e757e/{:08d}.jpg' % (frame, bbox))    
     thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id, 'forwards'))
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'backwards'))
     

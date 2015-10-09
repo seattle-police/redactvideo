@@ -247,7 +247,7 @@ $(function() {
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
         window.video_hash = hash;
-        socket.emit('get_upper_body_detections', {video: hash});
+        //socket.emit('get_upper_body_detections', {video: hash});
         window.current_video = userid+'/'+$(this).attr('href').slice(1);
         url = 'https://s3-us-west-2.amazonaws.com/redactvideodotorg/' + userid + '/' + $(this).attr('href').slice(1);
         redactionOptions = '<div id="redaction_options">';
@@ -726,7 +726,7 @@ $(function() {
         var ele = $(this).parent();
         var frame_coordinates = {'left': Math.round(ele.position().left), 'top': Math.round(ele.position().top), 'right': Math.round(ele.position().left + ele.width()), 'bottom': Math.round(ele.position().top + ele.height())};
                 
-        socket.emit('track_forwards', {'video_id': window.current_video, 'frame': parseInt($('#currentFrame').text()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
+        socket.emit('track_forwards', {'video_id': window.current_video, 'frame': parseInt(window.video.get()), 'box_id': $(this).parent().attr('id'), 'coordinates': frame_coordinates});
         $('#video_player_canvas').append('<p class="track_status" id="track_status_for_'+ele.attr('id')+'">Tracking status<br/><strong>Forwards:</strong> <span class="forwards"></span></p>');    
         var coord = window.frame_redactions[frame][window.video.get()];
         $('#track_status_for_'+ele.attr('id')).css('left', ele.position().left);

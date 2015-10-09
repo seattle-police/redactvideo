@@ -6,11 +6,13 @@ import time
 os.system('git pull --no-edit')    
     
 # setup rethinkdb
+
 os.system('python scripts/setup_rethinkdb.py')
     
 # kill current instance of app.py
 #os.system("sudo ps -ef | grep app.py | grep -v grep | awk '{print $2}' | sudo xargs kill -9")
-os.system('sudo pip install -r requirements.txt')
+#os.system('sudo pip install -r requirements.txt')
+os.system("sudo scripts/install.sh")
 os.system("sudo fuser -k 80/tcp")
 
 #time.sleep(20)
