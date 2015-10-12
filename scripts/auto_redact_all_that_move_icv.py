@@ -50,8 +50,11 @@ while True:
     # resize the frame, convert it to grayscale, and blur it
     #frame = imutils.resize(frame, width=500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (21, 21), 0)
+    gray = cv2.GaussianBlur(gray, (35, 35), 0)
+    for j in range(2):
+        gray = cv2.GaussianBlur(gray, (35, 35), 0)
     blurred = cv2.GaussianBlur(frame, (35, 35), 0)
+    
     for j in range(2):
         blurred = cv2.GaussianBlur(blurred, (35, 35), 0)
     # if the first frame is None, initialize it
