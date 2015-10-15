@@ -9,20 +9,26 @@ import imutils
 import time
 import cv2
 import numpy as np
+import os
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", help="path to the video file")
+ap.add_argument("-i", "--input", help="path to the video file")
+ap.add_argument("-o", "--output", help="path to the video file")
+ap.add_argument("-t", "--threshold", type=int, default=20, help="threshold")
+ap.add_argument("-c", "--iterations", type=int, default=10, help="iterations")
 ap.add_argument("-a", "--min-area", type=int, default=200, help="minimum area size")
+ap.add_argument("-k", "--type", default='fixed', help="type of camera")
+ap.add_argument("-s", "--stop_count", type=int, default=60, help="stop count")
 args = vars(ap.parse_args())
 
 # if the video argument is None, then we are reading from webcam
-if args.get("video", None) is None:
+if args.get("input", None) is None:
     camera = cv2.VideoCapture(0)
     time.sleep(0.25)
 
 # otherwise, we are reading from a video file
 else:
-    camera = cv2.VideoCapture(args["video"])
+    camera = cv2.VideoCapture(args["input"])
 grays = []
 # initialize the first frame in the video stream
 firstFrame = None
@@ -33,6 +39,10 @@ number_of_detections_per_frame = []
 stopped_count = 0
 started_count = 0
 confirmed_stopped = False
+import random
+import string
+frames_folder = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+os.system('mkdir /home/ubuntu/temp_videos/%s/' % (frames_folder))
 # loop over the frames of the video
 while True:
     #print i
@@ -50,9 +60,8 @@ while True:
     # resize the frame, convert it to grayscale, and blur it
     #frame = imutils.resize(frame, width=500)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (35, 35), 0)
-    for j in range(2):
-        gray = cv2.GaussianBlur(gray, (35, 35), 0)
+    gray = cv2.GaussianBlur(gray, (25, 25), 0)
+    
     blurred = cv2.GaussianBlur(frame, (35, 35), 0)
     
     for j in range(2):
@@ -62,8 +71,8 @@ while True:
     if firstFrame is None:
         firstFrame = gray
     #    continue
-    elif (i > 30 and not confirmed_stopped):
-        firstFrame = grays[i - 30]
+    #elif (i > 2 and not confirmed_stopped):
+    #    firstFrame = grays[i - 2]
 
     # compute the absolute difference between the current frame and
     # first frame
@@ -74,11 +83,11 @@ while True:
     #    continue
     #cv2.accumulateWeighted(gray, avg, 0.5)
     #frameDelta = cv2.absdiff(gray, cv2.convertScaleAbs(avg))
-    thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.threshold(frameDelta, args.get("threshold"), 255, cv2.THRESH_BINARY)[1]
 
     # dilate the thresholded image to fill in holes, then find contours
     # on thresholded image
-    thresh = cv2.dilate(thresh, None, iterations=10)
+    thresh = cv2.dilate(thresh, None, iterations=args.get('iterations'))
     (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE)
 
@@ -108,23 +117,30 @@ while True:
         #for k in range(0, len(pp)):
         #    frame[ pp[k,0],pp[k,1] ] = blurred[ pp[k,0],pp[k,1] ]
     if areas:
+        #print stopped_count
         largest = sorted(areas, key=lambda x: x[0], reverse=True)[0]
-        if not (largest[1] > 700 and largest[2] > 400):
-            #print 'stopped', i, sorted(areas, key=lambda x: x[0], reverse=True)[0]
-            stopped_count += 1
-            if stopped_count == 60:
-                started_count = 0
-                confirmed_stopped = True
-                print 'confirmed stopped', i - 60
-                firstFrame = saved_gray
-            if stopped_count == 1:
-                saved_gray = gray
-        else:
-            started_count += 1
-            if started_count == 60:
-                print 'started', largest
-                stopped_count = 0
-                confirmed_stopped = False
+        print largest[1], frame.shape[1]-120, largest[2], frame.shape[0]-120
+        if (largest[1] > frame.shape[1]-120 and largest[2] > frame.shape[0]-120):
+            print 'yes'
+            firstFrame = gray
+        #print largest[1], frame.shape[0]-100, largest[2], frame.shape[1]-100
+        #if not (largest[1] > frame.shape[0]-100 and largest[2] > frame.shape[1]-100):
+        #    #print 'stopped', i, sorted(areas, key=lambda x: x[0], reverse=True)[0]
+        #    stopped_count += 1
+        #    if stopped_count == args.get('stop_count'):
+        #        started_count = 0
+        #        confirmed_stopped = True
+        #        print 'confirmed stopped', i - 60
+        #        firstFrame = saved_gray
+        #    if stopped_count == 1:
+        #        saved_gray = gray
+        #else:
+        #    firstFrame = gray
+        #    started_count += 1
+        #    if started_count == args.get('stop_count'):
+        #        print 'started', largest
+        #        stopped_count = 0
+        #        confirmed_stopped = False
         #print i, sorted(areas, key=lambda x: x[0], reverse=True)[0]
     #number_of_detections_per_frame.append(len(cnts))
     #cv2.drawContours(frame, cnts, -1, (0,0,0), -1)
@@ -152,9 +168,9 @@ while True:
     #    firstFrame = gray
     #firstFrame = gray
     filename = '%08d.jpg' % (i)
-    import os
-    os.system('mkdir /home/ubuntu/temp_videos/test_icv_overredaction/')
-    cv2.imwrite('/home/ubuntu/temp_videos/test_icv_overredaction/'+filename,frame)
+    cv2.imwrite('/home/ubuntu/temp_videos/%s/%s' % (frames_folder, filename), frame)
+os.system('ffmpeg -i /home/ubuntu/temp_videos/%s/%%08d.jpg -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 %s' % (frames_folder, args["output"]))
+os.system('rm -rf /home/ubuntu/temp_video/%s' % (frames_folder))
 # cleanup the camera and close any open windows
 camera.release()
 cv2.destroyAllWindows()

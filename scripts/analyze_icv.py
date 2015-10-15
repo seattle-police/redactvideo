@@ -55,7 +55,8 @@ while True:
     # text
     (grabbed, frame) = camera.read()
     text = "Unoccupied"
-    saved_frames.append(frame.copy())
+    #saved_frames.append(frame.copy())
+    last_frame = frame.copy()
     # if the frame could not be grabbed, then we have reached the end
     # of the video
     if not grabbed:

@@ -3,7 +3,7 @@ files = os.listdir('/home/ubuntu/grouping_test/')
 groups = sorted(set([item.split('_')[0] for item in files]))
 html = """
 <style>
-li {
+li { 
 border:1px solid #000;
 }
 </style>"""
