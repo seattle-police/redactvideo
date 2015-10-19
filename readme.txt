@@ -1,5 +1,5 @@
 RedactVideo.org is a free open source web application developed by the Seattle Police Department. The lead developer is 
-Tim Clemans (timothy.clemans@seattle.gov). The purpose of RedactVideo is to empower law enforcement agencies to automatically publish as much dash and body camera videos as possible while obsuring the identities of citizens. Additionally the site allows agencies to do manual redaction efficiently. 
+Tim Clemans (timothy.clemans@seattle.gov). The purpose of RedactVideo is to empower law enforcement agencies to automatically publish as much dash and body camera videos as possible while obscuring the identities of citizens. Additionally the site allows agencies to do manual redaction efficiently. 
 
 Over-redaction
 
