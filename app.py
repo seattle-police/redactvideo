@@ -83,7 +83,7 @@ def index():
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         context['userid'] = user_id
         context['users_random_id'] = get_users_random_id(user_id)
-        print user_id
+        #print user_id
         user_data = db.table('users').get(user_id).run(conn)
         import base64
         import hmac, hashlib
@@ -127,7 +127,7 @@ def convert_every_video_to_h264():
     userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     for video in bucket.list(userid):
         
-        print video, video.name
+        #print video, video.name
         filename = video.name[video.name.index('/')+1:]
         if not '@' in filename and filename.endswith('.MPG'):
             continue
@@ -155,7 +155,7 @@ def generate_thumbs_for_every_video():
     userid = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     for video in bucket.list(userid):
         
-        print video, video.name
+        #print video, video.name
         filename = video.name[video.name.index('/')+1:]
         if not filename:
             continue
@@ -188,7 +188,7 @@ def get_users_youtube_token(user_id):
     'https://accounts.google.com/o/oauth2/token',
     data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'refresh_token': youtube_refresh_token, 'grant_type': 'refresh_token'})
     data = t.json()
-    print data['access_token']
+    #print data['access_token']
     return data['access_token']
     
 @app.route('/overblur_and_publish_all_videos/')
@@ -219,7 +219,7 @@ def change_site_settings():
 @app.route('/change_user_settings/', methods=['POST'])
 def change_user_settings():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print 'runns'
+    #print 'runns'
     if is_logged_in(request):
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         user_data = db.table('users').get(user_id).run(conn) 
@@ -227,21 +227,21 @@ def change_user_settings():
             settings = user_data['settings']
         else:
             settings = {}
-        print 'request data', dict(request.form)
+        #print 'request data', dict(request.form)
         # sometimes request.form is in the form of {'x': ['value']} instead of
         # {'x': 'value'} so need to convert to
         #  {'x': 'value'}
         form = dict([(item[0], item[1] if isinstance(item[1], basestring) else item[1][0]) for item in request.form.items()])
         settings.update(form)
-        print 'settings', settings
+        #print 'settings', settings
         db.table('users').get(user_id).update({'settings': settings}).run(conn)
-        print db.table('users').get(user_id).run(conn)
+        #print db.table('users').get(user_id).run(conn)
         return Response(json.dumps({'success': True}))            
 
 @app.route('/get_users_s3_buckets/', methods=['GET'])
 def get_users_s3_buckets():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print 'runns'
+    #print 'runns'
     if is_logged_in(request):
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         user_data = db.table('users').get(user_id).run(conn) 
@@ -314,7 +314,7 @@ def confirm_two_factor():
     
     session_id = id_generator(30)
     username = userid
-    print db.table('sessions').insert({'id': session_id, 'userid': username}).run(conn)
+    #print db.table('sessions').insert({'id': session_id, 'userid': username}).run(conn)
     resp = make_response(redirect('/'))
     resp.set_cookie('session', session_id)
     return resp
@@ -344,7 +344,7 @@ def submit_request_for_account():
             message.set_from('no-reply@redactvideo.org')
             sg = sendgrid.SendGridClient(get_setting('sendgrid_username'), get_setting('sendgrid_password'))
             status, msg = sg.send(message)
-            print status, msg
+            #print status, msg
             secret_code = id_generator(60)
             if agency_email.endswith('.gov'):
                 approved = True
@@ -370,8 +370,8 @@ def confirm_account():
     db.table('users').get(userid).update({'verified': True}).run(conn)  
     session_id = id_generator(30)
     username = userid
-    print {'id': session_id, 'userid': username}
-    print db.table('sessions').insert({'id': session_id, 'userid': username}).run(conn)
+    #print {'id': session_id, 'userid': username}
+    #print db.table('sessions').insert({'id': session_id, 'userid': username}).run(conn)
     resp = make_response(render_template('create_password.html'))
     resp.set_cookie('session', session_id)
     return resp
@@ -379,7 +379,7 @@ def confirm_account():
 @app.route('/create_password/', methods=['POST'])    
 def create_password():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print request.form['retyped_password']
+    #print request.form['retyped_password']
     if request.form['password'] == request.form['retyped_password']:
         user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
         user_data = db.table('users').get(user_id).run(conn)
@@ -402,8 +402,8 @@ def autoupdate():
     secret = get_setting('github_auto_update_secret')
     import hmac
     from hashlib import sha1
-    print request.get_json()
-    print secret
+    #print request.get_json()
+    #print secret
     hmac_object = hmac.new(str(secret), request.data, digestmod=sha1)
     if hmac.compare_digest(str(github_signature), 'sha1='+hmac_object.hexdigest()):
         os.system('python autodeploy.py &')
@@ -447,10 +447,10 @@ def upload_to_s3(filepath, userid):
 def save_upperbody():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import json
-    print request.form
+    #print request.form
     conn = r.connect( "localhost", 28015).repl()
     db.table('upperbody_detections').insert({'id': request.form['filename'], 'coordinates': json.loads(request.form['detected_regions'])}, conflict='update').run(conn)
-    print request.form
+    #print request.form
     return Response('')
 
 def send_short_email(userid, mes):    
@@ -466,7 +466,7 @@ def incoming_email_thread(form):
     import rethinkdb as r
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     # parse the to email address
-    print 'to', form['to']
+    #print 'to', form['to']
     if form['to'].endswith('>'):
         m = re.search('"(?P<email>.*)"', form['to'])
         email = m.group('email')
@@ -475,17 +475,17 @@ def incoming_email_thread(form):
     if not email.endswith('@redactvideo.org'):
         return Response('error')
     userto = email.split('@')[0]
-    print 'userto', userto
+    #print 'userto', userto
     users_random_id = userto[:userto.index('_')].upper()
     userid = db.table('random_ids_for_users').get(users_random_id).run(conn)['userid']
-    print 'userid', userid
+    #print 'userid', userid
     # download the evidence.com html with the url to download the zip file
-    print 'txt is next'
-    print form
+    #print 'txt is next'
+    #print form
     body = form['html'] if 'html' in form else form['text']
     m = re.search('(?P<base>https://(.*)\.evidence\.com)/1/uix/public/download/\?package_id=(.*)ver=v2', body)
     if not m:
-        print 'something wrong with email parsing'
+        #print 'something wrong with email parsing'
         send_short_email(userid, 'Something wrong with the authenticated share make sure your share is unauthenticated')
         #return Response('')
     else:
@@ -493,14 +493,14 @@ def incoming_email_thread(form):
     
     r = requests.get(m.group(0))
     
-    print 'mgroup0', m.group(0)
+    #print 'mgroup0', m.group(0)
     base_url = m.group('base')
     download_html = r.text
-    print download_html
+    #print download_html
     m = re.search('download_url="(?P<url>.*ver=v2)', download_html)
     zip_download_url = base_url+m.group('url').replace('&amp;', '&')
     
-    print zip_download_url
+    #print zip_download_url
     # save the zip file
     zips_id = id_generator()
     with open('/home/ubuntu/temp_videos/'+zips_id+'.zip', 'wb') as handle:
@@ -550,7 +550,7 @@ def incoming_email_thread(form):
                 #send_short_email(userid, '%s overblured and uploaded to Youtube' % (video))
                 
     os.system('rm -rf /home/ubuntu/temp_videos/'+zips_id)
-    print 'from', form['from']
+    #print 'from', form['from']
     #return Response('')
 
     
@@ -562,7 +562,7 @@ def incoming_email():
 @socketio.on('message')
 def handle_message(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print message
+    #print message
     send(message)
 
 @socketio.on('connect', namespace='/test')
@@ -573,7 +573,7 @@ def test_connect():
 @socketio.on('framize', namespace='/test')
 def framize(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print message['data']
+    #print message['data']
     video = message['data']
     emit('framization_status', {'data': 'Downloading the video to framize'})
     random_filename = get_md5(video)
@@ -594,14 +594,14 @@ def framize(message):
     #os.system('ffmpeg -i "%s" -y "%s/%%08d.jpg" &' % (video_path, target_dir))
     
     number_of_frames = os.popen("ffprobe -select_streams v -show_streams /home/ubuntu/temp_videos/%s.mp4 2>/dev/null | grep nb_frames | sed -e 's/nb_frames=//'" % (random_filename)).read()
-    print number_of_frames
+    #print number_of_frames
     number_of_frames = int(number_of_frames)
     import time
     while True:
         number_of_files = len(os.listdir(target_dir))
         percentage = '{0:.0%}'.format( float(number_of_files) / float(number_of_frames))
-        print number_of_files, number_of_frames
-        print 'Framizing. %s done' % (percentage) 
+        #print number_of_files, number_of_frames
+        #print 'Framizing. %s done' % (percentage) 
         emit('framization_status', {'data': 'Framizing. %s done' % (percentage)})
         gevent.sleep(1) # see http://stackoverflow.com/questions/18941420/loop-seems-to-break-emit-events-inside-namespace-methods-gevent-socketio
         if number_of_files >= number_of_frames:
@@ -623,8 +623,8 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
     for k, f in enumerate(frames):
         if db.table('track_status').get(box_id).run(conn)['stop']:
             return
-        print "Processing Frame %s (%s)" % (k, f)
-        print f
+        #print "Processing Frame %s (%s)" % (k, f)
+        #print f
         img = io.imread(f)
         
         # We need to initialize the tracker on the first frame
@@ -637,9 +637,9 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
                 top =  start_rectangle.top() - 10
                 right = start_rectangle.right() + 10
                 bottom = start_rectangle.bottom() + 10
-                print left, top, right, bottom
+                #print left, top, right, bottom
                 start_rectangle = dlib.rectangle(left, top, right, bottom)
-                print [int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20]
+                #print [int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20]
                 #start_rectangle = dlib.rectangle(int(start_rectangle.left())-10, int(start_rectangle.top())-10, int(start_rectangle.width())+20, int(start_rectangle.height())+20)
             tracker.start_track(img, start_rectangle)
             percentage = r'0%'
@@ -650,7 +650,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
             position = tracker.get_position()
             position = [int(position.left()), int(position.top()), int(position.width()), int(position.height())]
             #position = [int(position.left())+10, int(position.top())+10, int(position.width())-20, int(position.height())-20]
-            print 'last', last
+            #print 'last', last
             how_far = 20
             anomaly = 30
             if handle_head_to_side:
@@ -666,16 +666,16 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
                             position[2 + i] = d
                             for i in range(how_far):
                                 
-                                print {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction}
+                                #print {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction}
                                 namespace.emit('track_result', {'frame': frame + k - i, 'coordinates': position, 'box_id': box_id, 'percentage': percentage, 'direction': direction})
                             left = int(position[0])
                             top =  int(position[1])
                             right = left + int(position[2])
                             bottom = top + int(position[3])
-                            print left, top, right, bottom
+                            #print left, top, right, bottom
                             if right > left and bottom > top:
                                 start_rectangle = dlib.rectangle(left, top, right, bottom)
-                                print start_rectangle
+                                #print start_rectangle
                                 
                                 tracker = dlib.correlation_tracker()
                                 tracker.start_track(img, start_rectangle)
@@ -684,7 +684,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
                 if last:
                     throw_out = False
                     for i, value in enumerate(last):
-                        print 'abs', abs(value - position[i])
+                        #print 'abs', abs(value - position[i])
                         if abs(value - position[i]) > 10: # helps ensure we don't go way off track have seen tracker go completely right of head when head goes to side
                             position = last
                             throw_out = True
@@ -708,13 +708,13 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
                 top =  int(position[1])-10
                 right = int(position[0]) + int(position[2]) + 10
                 bottom = int(position[1]) + int(position[3]) + 10
-                print [left, top, right, bottom]
+                #print [left, top, right, bottom]
                 start_rectangle = dlib.rectangle(left, top, right, bottom)
                 tracker = dlib.correlation_tracker()
                 tracker.start_track(img, start_rectangle)
                 padding = 10*k
                 position = [position[0]+padding, position[1]+padding, position[2]-(2*padding), position[3]-(2*padding)]
-                print 'MODIFIED POSITION', position
+                #print 'MODIFIED POSITION', position
             percentage = '{0:.0%}'.format( float(k) / float(number_of_frames))
             if direction == 'backwards':
                 k = -1 * k
@@ -726,7 +726,7 @@ def track_object(namespace, frames, start_rectangle, frame, box_id, direction, h
 @socketio.on('track_forwards_and_backwards', namespace='/test')            
 def track_forwards_and_backwards(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print message 
+    #print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
     #return
@@ -758,14 +758,14 @@ def track_forwards_and_backwards(message):
         end = 0
     end = 0 
     backward_frames = ['/home/ubuntu/temp_videos/%s_contour/%08d.jpg' % (video_hash, i) for i in range(frame, end, -1) if i > 0]
-    print forward_frames
+    #print forward_frames
     #print frames
     forward_positions = []
     backward_positions = []
     #print map(int,message['coordinates'])
     c = message['coordinates']
     start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
-    print start_rectangle
+    #print start_rectangle
     import thread
     #bbox = '%s,%s,%s,%s' % (c['left'], c['top'], c['right'] - c['left'], c['bottom'] - c['top'])
     #print 'python ../CMT/run.py --quiet --no-preview --skip %s --bbox %s ../temp_videos/aba2eafda7e4e086fcab262c792e757e/{:08d}.jpg' % (frame, bbox)
@@ -778,7 +778,7 @@ def track_forwards_and_backwards(message):
 @socketio.on('track_forwards', namespace='/test')            
 def track_forwards(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print message 
+    #print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
     #return
@@ -805,14 +805,14 @@ def track_forwards(message):
     end = total_frames-100
     forward_frames = ['/home/ubuntu/temp_videos/%s/%08d.jpg' % (video_hash, i) for i in range(frame, end)]
     
-    print forward_frames
+    #print forward_frames
     #print frames
     forward_positions = []
     backward_positions = []
     #print map(int,message['coordinates'])
     c = message['coordinates']
     start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
-    print start_rectangle
+    #print start_rectangle
     import thread
      
     thread.start_new_thread(track_object, (request.namespace, forward_frames, start_rectangle, frame, box_id, 'forwards'))
@@ -820,7 +820,7 @@ def track_forwards(message):
 @socketio.on('track_backwards', namespace='/test')            
 def track_backwards(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print message 
+    #print message 
     video_hash = get_md5(message['video_id'])
     box_id = message['box_id']
     #return
@@ -853,7 +853,7 @@ def track_backwards(message):
     #print map(int,message['coordinates'])
     c = message['coordinates']
     start_rectangle = dlib.rectangle(c['left'], c['top'], c['right'], c['bottom'])
-    print start_rectangle
+    #print start_rectangle
     
     thread.start_new_thread(track_object, (request.namespace, backward_frames, start_rectangle, frame, box_id, 'forwards'))
 
@@ -862,7 +862,7 @@ def generate_redacted_video_thread(namespace, message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     import cv2
     coords = message['coordinates'] # coordinates are a dictionary of frame -> dictionary of box id -> coordinates
-    print coords
+    #print coords
     video_hash = get_md5(message['video_id'])
     os.system('rm -rf /home/ubuntu/temp_videos/redacted_%s' % (video_hash))
     os.system('cp -r /home/ubuntu/temp_videos/%s /home/ubuntu/temp_videos/redacted_%s' % (video_hash, video_hash)) # we'll modify frames in the redacted folder
@@ -873,16 +873,16 @@ def generate_redacted_video_thread(namespace, message):
     #for i, frame in enumerate([]):
         i += 1
         percentage = '{0:.0%}'.format( float(i) / float(number_of_frames))
-        print 'Framizing. %s done' % (percentage) 
+        #print 'Framizing. %s done' % (percentage) 
         namespace.emit('framization_status', {'data': 'Applying redactions to each frame %s done' % (percentage)})
         if not frame.endswith('.jpg'):
             continue
         frame = str(int(frame[:-4]))
-        print frame
+        #print frame
         if frame in coords:
             
             filename = '/home/ubuntu/temp_videos/redacted_%s/%08d.jpg' % (video_hash, int(frame))
-            print filename
+            #print filename
             img = cv2.imread(filename)
             for c in coords[frame].values():
                 # c is left, top, width, height
@@ -916,7 +916,7 @@ def generate_redacted_video_thread(namespace, message):
     os.system('ffmpeg -i "/home/ubuntu/temp_videos/%s.mp4" -y -vn -acodec copy -b:a 32k -strict -2 /home/ubuntu/temp_videos/%s.aac' % (video_hash, video_hash))
     audio_redactions = message['audio_redactions']
     audio_redactions = ','.join(["volume=enable='between(t,%s,%s)':volume=0" % (ar['start'], ar['stop']) for ar in audio_redactions])
-    print 'ffmpeg -i /home/ubuntu/temp_videos/%s.aac -y -af "%s" -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.aac' % (video_hash, audio_redactions, video_hash)
+    #print 'ffmpeg -i /home/ubuntu/temp_videos/%s.aac -y -af "%s" -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.aac' % (video_hash, audio_redactions, video_hash)
     os.system('ffmpeg -i /home/ubuntu/temp_videos/%s.aac -y -af "%s" -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_%s.aac' % (video_hash, audio_redactions, video_hash))
     os.system('ffmpeg -i /home/ubuntu/temp_videos/redacted_%s.mp4 -i /home/ubuntu/temp_videos/redacted_%s.aac -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 /home/ubuntu/temp_videos/redacted_with_audio_%s.mp4' % (video_hash, video_hash, video_hash))
     upload_to_s3('/home/ubuntu/temp_videos/redacted_with_audio_%s.mp4' % (video_hash), userid)
@@ -927,7 +927,7 @@ def generate_redacted_video_thread(namespace, message):
     
 @socketio.on('generate_redacted_video', namespace='/test') 
 def generate_redacted_video(message):
-    print 'generate_redacted_video'     
+    #print 'generate_redacted_video'     
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     thread.start_new_thread(generate_redacted_video_thread, (request.namespace, message))          
     
@@ -952,9 +952,9 @@ def do_detect_upper_body(namespace, video_id, start_frame):
         filename = '%s_frames/%08d.jpg' % (video_hash, frame)
         if db.table('upperbody_detections').get(filename).run(conn):
             print 'already did upper body detection'
-            #continue
+            continue
         lambdaConn = boto.connect_awslambda(get_setting('access_key_id'), get_setting('secret_access_key'), region=boto.awslambda.get_regions('awslambda')[0])
-        print i, frame, lambdaConn.invoke_async('detectUpperBody', json.dumps({'filename': filename}))
+        #print i, frame, lambdaConn.invoke_async('detectUpperBody', json.dumps({'filename': filename}))
         
     return 
 
@@ -963,7 +963,7 @@ def get_upper_body_detections(message):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     detections = db.table('upperbody_detections').run(conn)
     detections = [(int(item['id'][item['id'].find('/')+1:item['id'].find('.')]), item['coordinates']) for item in detections if item['id'].startswith(message['video'])]
-    print detections
+    #print detections
     for item in detections:
         emit('upper_body_detections', {'frame': item[0], 'detections': item[1]})
      
@@ -971,12 +971,170 @@ def get_upper_body_detections(message):
 @socketio.on('detect_upper_body', namespace='/test')     
 def detect_upper_body(message): 
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    print 'facilitate_detect_upper_body'
-    print message 
+    #print 'facilitate_detect_upper_body'
+    #print message 
     thread.start_new_thread(do_detect_upper_body, (request.namespace, message['video_id'], message['start_frame']))
+
+def gd(namespace, message):
+    import argparse
+    import datetime
+    import imutils
+    import time
+    import cv2
+    import numpy as np
+    import os
+         
+    firstFrame = None
+    detections = [[]]
+
+    # loop over the frames of the video
+    i = -1
+    grays = []
+    groups = {}
+    centers_to_groups = {}
+    group_i = 0
+    saved_frames = []
+    #print message['data']
+    video = message['data']
+    random_filename = get_md5(video)
+    video_path = '/home/ubuntu/temp_videos/%s.mp4' % (random_filename)
+    bucket.get_key(video).get_contents_to_filename(video_path)
+    camera = cv2.VideoCapture(video_path)
+    grays = []
+    # initialize the first frame in the video stream
+    firstFrame = None
+    avg = None
+    detections = [[]]
+    number_of_detections_per_frame = []
+    stopped_count = 0
+    started_count = 0
+    confirmed_stopped = False
+    import random
+    import string
+    #frames_folder = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+    #os.system('mkdir /home/ubuntu/temp_videos/%s/' % (frames_folder))
+    # loop over the frames of the video
+    while True:
+        #print i
+        i += 1
+        # grab the current frame and initialize the occupied/unoccupied
+        # text
+        (grabbed, frame) = camera.read()
+        text = "Unoccupied"
+
+        # if the frame could not be grabbed, then we have reached the end
+        # of the video
+        if not grabbed:
+            break
+
+        # resize the frame, convert it to grayscale, and blur it
+        #frame = imutils.resize(frame, width=500)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (25, 25), 0)
+        
+        blurred = cv2.GaussianBlur(frame, (35, 35), 0)
+        
+        for j in range(2):
+            blurred = cv2.GaussianBlur(blurred, (35, 35), 0)
+        # if the first frame is None, initialize it
+        grays.append(gray)
+        if firstFrame is None:
+            firstFrame = gray
+        #    continue
+        #elif (i > 2 and not confirmed_stopped):
+        #    firstFrame = grays[i - 2]
+
+        # compute the absolute difference between the current frame and
+        # first frame
+        frameDelta = cv2.absdiff(firstFrame, gray)
+        #if avg is None:
+        #    #print "[INFO] starting background model..."
+        #    avg = gray.copy().astype("float")
+        #    continue
+        #cv2.accumulateWeighted(gray, avg, 0.5)
+        #frameDelta = cv2.absdiff(gray, cv2.convertScaleAbs(avg))
+        thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+
+        # dilate the thresholded image to fill in holes, then find contours
+        # on thresholded image
+        thresh = cv2.dilate(thresh, None, iterations=10)
+        (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE)
+        frames_detections = []
+        # loop over the contours
+        areas = []
+        new_centers_to_groups = {}
+        for c in cnts:
+            # compute the bounding box for the contour, draw it on the frame,
+            # and update the text
+            (x, y, w, h) = cv2.boundingRect(c)
+            #print w, h
+            #areas.append((w*h, w, h))
+            #detections.append(((x, y, w, h), i))
+            (x, y, w, h) = cv2.boundingRect(c)
+            center = (x + int(float(w)/2), y + int(float(h)/2))
+            frames_detections.append({'rect': (x, y, w, h), 'center': center})
+            
+            #print centers_to_groups
+            if i > 0:
+                for detection in detections[i-1]:
+                    (x2, y2, w2, h2) = detection['rect']
+                    center2 = detection['center']
+                    #center2 = (x + int(float(w)/2), y + int(float(h)/2))
+                    centers_close = abs(center2[0] - center[0]) < 50 and abs(center2[1] - center[1]) < 50
+                    corners_close = abs(x2 - x) < 20 or abs(y2 - y) < 20 or abs((x2 + w2) - (x + w)) < 20 or abs((y2 + h2) - (y + h)) < 20 
+                    area_close = abs((w2 * h2) - (w * h)) < 150
+                    size_close = True
+                    if w2 > w:
+                        if w / float(w2) < 0.33:
+                        
+                            size_close = False
+                    else:
+                        if w2 / float(w) < 0.33:
+                            size_close = False
+                    if h2 > h:
+                        if h / float(h2) < 0.33:
+                        
+                            size_close = False
+                    else:
+                        if h2 / float(h) < 0.33:
+                            size_close = False
+                    #if (centers_close or corners_close) and not size_close:
+                    #    #print "size not close"
+                    if (centers_close or corners_close) and size_close:
+                    #if centers_close:
+                    #if (centers_close or corners_close):
+                        #print 'true'
+                        #print i, (x, y, w, h), center, (x2, y2, w2, h2), center2
+                        if (x2, y2, w2, h2) in centers_to_groups:
+                            #print True, centers_to_groups[(x2, y2, w2, h2)]
+                            groups[centers_to_groups[(x2, y2, w2, h2)]].append(((x, y, w, h), center, i))
+                            #namespace.emit('background_subtraction_detection_group', {'group': centers_to_groups[(x2, y2, w2, h2)], 'coords': (x2, y2, w2, h2), 'frame': i})
+                            new_centers_to_groups[(x, y, w, h)] = centers_to_groups[(x2, y2, w2, h2)]
+                        else:
+                            groups[group_i] = [((x2, y2, w2, h2), center2, i-1), ((x, y, w, h), center, i)]
+                            namespace.emit('background_subtraction_detection_group', {'group': group_i, 'coordinates': (x2, y2, w2, h2), 'frame': i-1})
+                            #namespace.emit('background_subtraction_detection_group', {'group': group_i, 'coords': (x, y, w, h), 'frame': i})
+                            new_centers_to_groups[(x, y, w, h)] = group_i
+                            group_i += 1
+        if areas:
+            #print stopped_count
+            largest = sorted(areas, key=lambda x: x[0], reverse=True)[0]
+            #print largest[1], frame.shape[1]-120, largest[2], frame.shape[0]-120
+            if (largest[1] > frame.shape[1]-120 and largest[2] > frame.shape[0]-120):
+                #print 'yes'
+                firstFrame = gray
+        detections.append(frames_detections)
+        centers_to_groups = new_centers_to_groups.copy()    
     
-    
-    
+@socketio.on('group_detections', namespace='/test')     
+def group_detections(message):
+    thread.start_new_thread(gd, (request.namespace, message))
+
+            
+                
+                
+        
 @socketio.on('broadcast', namespace='/broadcast_everything')     
 def broadcast(message):    
     emit('broadcast', message, broadcast=True)

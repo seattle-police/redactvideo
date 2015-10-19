@@ -77,6 +77,17 @@ $(function() {
             $('#framization_status').after('<video controls><source src="' + url + '"></video>');
         }
     });
+    socket.on('background_subtraction_detection_group', function(msg) {
+        $('#background_subtraction_detection_group').append('<div id="bsdg_'+msg['group']+'"></div>');
+        var frame=msg['frame'];
+        var padding=0;
+        $('#bsdg_'+msg['group']).css('background', 'url(https://s3-us-west-2.amazonaws.com/redactvideodotorg/'+window.video_hash+'_frames/'+pad(frame+1, 8)+'.jpg)');
+        $('#bsdg_'+msg['group']).css('padding', padding+'px');
+        $('#bsdg_'+msg['group']).height(msg['coordinates'][3]+padding+padding);
+        $('#bsdg_'+msg['group']).width(msg['coordinates'][2]+padding+padding);
+        $('#bsdg_'+msg['group']).css('background-position', (-1*(msg['coordinates'][0]-padding))+'px '+(-1*(msg['coordinates'][1]-padding))+'px');
+        console.log(JSON.stringify(msg));
+    });
     socket.on('track_result', function(msg) {
         //console.log(msg);
         var coordict = {};
@@ -245,6 +256,7 @@ $(function() {
         window.frame_redactions = {0: {}};
         userid = "{{ userid }}";
         socket.emit('framize', {data: userid+'/'+$(this).attr('href').slice(1)});
+        socket.emit('group_detections', {data: userid+'/'+$(this).attr('href').slice(1)});
         hash = $(this).attr('data-hash');
         window.video_hash = hash;
         //socket.emit('get_upper_body_detections', {video: hash});
@@ -268,6 +280,7 @@ $(function() {
         
         html += '<div id="controls"><div class="frame">';
         html += '<p id="framization_status"></p><span id="currentFrame">0</span></div>';
+        html += '<div id="background_subtraction_detection_group"></div>';
         html += '<input type="button" value="Play/Pause" id="play-pause" />';
         html += '<input type="button" value="Start point for audio redaction" id="start-stop-audio-redact" />';
         html += '<input type="button" value="Do upper body detection (go to start frame first)" id="do_upper_body_detection" />';
