@@ -189,7 +189,7 @@ def get_users_youtube_token(user_id):
     data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'refresh_token': youtube_refresh_token, 'grant_type': 'refresh_token'})
     data = t.json()
     #print data['access_token']
-    return data['access_token'] 
+    return data['access_token']  
     
 @app.route('/overblur_and_publish_all_videos/')
 def overblur_and_publish_all_videos():
