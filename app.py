@@ -77,7 +77,7 @@ from upload import upload_to_youtube
 def is_logged_in(request):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     if request.cookies.get('session'):
-        if db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']:
+        if db.table('sessions').get(request.cookies.get('session')).run(conn):
             return True
         else:
             return False
