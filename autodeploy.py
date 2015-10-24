@@ -5,7 +5,8 @@ import time
 # and killing current instance of app.py
 os.system('sudo pip install -r requirements.txt')
 os.system('git stash save --keep-index')
-os.system('git pull --no-edit')    
+os.system('git pull --no-edit')
+os.system('sudo cp /home/ubuntu/redactvideodotorg/scripts/rc.local /etc/rc.local')
     
 # setup rethinkdb
 
