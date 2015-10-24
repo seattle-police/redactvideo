@@ -40,7 +40,7 @@ RedactVideo is a free open source web app developed by the Seattle Police Depart
   16. Click "Review and Launch"
   17. Click "Launch"
   18. Click "Choose an existing key pair" and then click "Proceed without a key pair"
-  19. Click the checkbox next to "I acknoledge" and then click "Launch Instances"
+  19. Click the checkbox next to "I acknowledge" and then click "Launch Instances"
   20. Click "View Instances" and wait about ten minutes for it to boot up
   
   
