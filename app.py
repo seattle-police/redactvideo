@@ -19,6 +19,7 @@ conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
 print conn
 import boto
 import boto.awslambda
+
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import os,sys
@@ -29,6 +30,26 @@ from skimage import io
 from utils.video import put_folder_on_s3
 import thread
 
+import boto3
+import random
+import string
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
+    return ''.join(random.choice(chars) for _ in range(size))
+
+# Let's use Amazon S3
+s3 = boto3.resource('s3')
+
+# get settings
+buckets = list(s3.buckets.all())
+settings_buckets = [bucket for bucket in buckets if bucket.startswith('redactvideo_settings_')]
+
+if settings_buckets:
+    settings_bucket = settings_buckets[0]
+else:
+    bucket_name = 'redactvideo_settings_' + id_generator()
+    s3.create_bucket(Bucket=bucket_name)
 def get_setting(setting):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     try:
@@ -49,9 +70,7 @@ while True:
         pass
 
 from upload import upload_to_youtube
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    return ''.join(random.choice(chars) for _ in range(size))
+
 
 def is_logged_in(request):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
@@ -188,8 +207,7 @@ def get_users_youtube_token(user_id):
     'https://accounts.google.com/o/oauth2/token',
     data={'client_id': get_setting('google_client_id'), 'client_secret': get_setting('google_client_secret'), 'refresh_token': youtube_refresh_token, 'grant_type': 'refresh_token'})
     data = t.json()
-    #print data['access_token']
-    return data['access_token']  
+    return data['access_token']
     
 @app.route('/overblur_and_publish_all_videos/')
 def overblur_and_publish_all_videos():
