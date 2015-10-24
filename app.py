@@ -46,8 +46,10 @@ buckets = list(s3.buckets.all())
 settings_buckets = [bucket for bucket in buckets if bucket.startswith('redactvideo_settings_')]
 
 if settings_buckets:
+    print "There's a bucket"
     settings_bucket = settings_buckets[0]
 else:
+    print "There's not a bucket"
     bucket_name = 'redactvideo_settings_' + id_generator()
     s3.create_bucket(Bucket=bucket_name)
 def get_setting(setting):
