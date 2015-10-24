@@ -13,7 +13,7 @@ RedactVideo is a free open source web app developed by the Seattle Police Depart
   6. Follow the on screen identify verification instructions and then click "Continue to select your Support Plan"
   7. On next screen select basic support plan and click "Continue"
   8. On "Welcome to Amazon Web Services" click "Sign into the Console"
-2. Signin
+2. Signin. Warning you could get the message "Thanks for signing up with Amazon Web Services. Your services may take up to 24 hours to fully activate. If you’re unable to access AWS services after that time, here are a few things you can do to expedite the process:"
 3. Setup a role
   1. Click on your name in the top right, click "Security Credentials", and then click "Get Started With IAM Users"
   2. Click "Roles"
@@ -41,10 +41,10 @@ RedactVideo is a free open source web app developed by the Seattle Police Depart
   17. Click "Launch"
   18. Click "Choose an existing key pair" and then click "Proceed without a key pair"
   19. Click the checkbox next to "I acknowledge" and then click "Launch Instances"
-  20. Click "View Instances" and wait about ten minutes for it to boot up
-  
-  
-  
+  20. Click "View Instances" and wait about two to five minutes for it to boot up
+5. Go to the web app
+  1. Click on the row and copy paste the public DNS url, it should look like "ec2-54-148-137-114.us-west-2.compute.amazonaws.com"
+  2. Paste it into another browser tab
 
 # Capabilities
 
@@ -64,4 +64,4 @@ RedactVideo is a free open source web app developed by the Seattle Police Depart
   * Track forwards
   * Track backwards
 * Run detectors
-  * Group them 
+  * Group them
