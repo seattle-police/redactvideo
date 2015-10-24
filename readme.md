@@ -42,10 +42,23 @@ RedactVideo is a free open source web app developed by the Seattle Police Depart
   18. Click "Choose an existing key pair" and then click "Proceed without a key pair"
   19. Click the checkbox next to "I acknowledge" and then click "Launch Instances"
   20. Click "View Instances" and wait about two to five minutes for it to boot up
-5. Go to the web app
-  1. Click on the row and copy paste the public DNS url, it should look like "ec2-54-148-137-114.us-west-2.compute.amazonaws.com"
-  2. Paste it into another browser tab
-
+  21. Click on the row and copy paste the public DNS url, it should look like "ec2-54-148-137-114.us-west-2.compute.amazonaws.com" 
+  22. Open a broswer tab and paste in the public DNS url. The url shouldn't work but keep the tab open so you can come back to it easily.
+5. Get Google API key for connecting to Youtube
+  1. Go to https://console.developers.google.com in new browser tab
+  2. Click on "Credentials" and click "Add credentials"
+  3. Click "OAuth 2.0 client ID" and select "Web application"
+  4. In name field put "RedactVideo" 
+  5. In next box put http://[[Amazon EC2 public dns url]]
+  6. In the next box put http://[[Amazon EC2 public dns url]]/youtube_oauth_callback/
+  7. Click "Create"
+  8. Copy the Client ID
+6. Go to the RedactVideo web app tab you created earlier and refresh
+  1. Click "Single user install"
+  2. Paste the Google Client ID
+  3. Then copy and paste the client secret
+  4. Click "Next"
+  
 # Capabilities
 
 ## Over-redaction
