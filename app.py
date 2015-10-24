@@ -43,7 +43,7 @@ s3 = boto3.resource('s3')
 
 # get settings
 buckets = list(s3.buckets.all())
-settings_buckets = [bucket for bucket in buckets if bucket.startswith('redactvideo_settings_')]
+settings_buckets = [bucket.name for bucket in buckets if bucket.name.startswith('redactvideo_settings_')]
 
 if settings_buckets:
     print "There's a bucket"
