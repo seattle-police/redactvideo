@@ -3,6 +3,8 @@ import time
 # This script helps with auto deploy of new code by 
 # initializing database, installing new pip requirements,
 # and killing current instance of app.py
+os.system('sudo pip install -r requirements.txt')
+os.system('git stash save --keep-index')
 os.system('git pull --no-edit')    
     
 # setup rethinkdb
