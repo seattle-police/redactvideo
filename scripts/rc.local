@@ -13,5 +13,6 @@
 
 cd /home/ubuntu/; rethinkdb &
 cd /home/ubuntu/redactvideodotorg/; sudo python autodeploy.py > /home/ubuntu/app_log.txt 2>&1 &
-cd /home/ubuntu/redactvideodotorg/; sudo python email_when_port_80_goes_down.py &
+cd /home/ubuntu/redactvideodotorg/scripts/; sudo python email_when_port_80_goes_down.py &
+cd /home/ubuntu/redactvideodotorg/scripts/; sudo python auto_update.py &
 exit 0
