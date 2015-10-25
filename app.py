@@ -35,7 +35,7 @@ import random
 import string
 
 
-url_for('static', filename='main.css')
+#url_for('static', filename='main.css')
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     return ''.join(random.choice(chars) for _ in range(size))
