@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, redirect, render_template, make_response
+from flask import Flask, Response, request, redirect, render_template, make_response, url_for
 from flask.ext.socketio import SocketIO, emit
 import gevent
 import rethinkdb as r
@@ -34,6 +34,8 @@ import boto3
 import random
 import string
 
+
+url_for('static', filename='main.css')
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     return ''.join(random.choice(chars) for _ in range(size))
