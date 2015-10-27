@@ -19,5 +19,4 @@ mkdir redactvideo_logs
 sudo cp redactvideo/scripts/rc.local /etc/rc.local
 BASE_PATH=$(pwd | sed 's_/_\\/_g')
 echo "path", $BASE_PATH
-echo 's/replace_with_path/{echo $BASE_PATH}/g'
-sudo perl -pi -MEnv=BASE_PATH -e 's/replace_with_path/$BASE_PATH/g' /etc/rc.local
+sudo perl -pi -e 's/replace_with_path/'$BASE_PATH'/g' /etc/rc.local
