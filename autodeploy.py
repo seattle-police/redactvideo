@@ -3,25 +3,8 @@ import time
 # This script helps with auto deploy of new code by 
 # initializing database, installing new pip requirements,
 # and killing current instance of app.py
-os.system('sudo pip install -r requirements.txt')
-os.system('git stash save --keep-index')
-os.system('git pull --no-edit')
-os.system('sudo cp /home/ubuntu/redactvideodotorg/scripts/rc.local /etc/rc.local')
-    
-# setup rethinkdb
-
-os.system('python scripts/setup_rethinkdb.py')
-    
-# kill current instance of app.py
-#os.system("sudo ps -ef | grep app.py | grep -v grep | awk '{print $2}' | sudo xargs kill -9")
-#os.system('sudo pip install -r requirements.txt')
-#os.system("sudo scripts/install.sh")
+os.system('sudo scripts/install.sh')
 os.system("sudo fuser -k 80/tcp")
-
-#time.sleep(20)
 import datetime
 dt = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-
 os.system("sudo python app.py")
-#os.system("sudo python app.py > /home/ubuntu/app_log_%s.txt 2>&1 &" % (dt))
-#os.system("sudo tail -f /home/ubuntu/app_log_%s.txt" % (dt))
