@@ -11,7 +11,7 @@
 #
 # By default this script does nothing.
 
-$BASE = replace_with_path
+BASE = replace_with_path
 cd $BASE; rethinkdb &
 cd $BASE/redactvideo/; sudo python autodeploy.py > redactvideo_logs/app_log.txt 2>&1 &
 cd $BASE/redactvideo/; sudo python email_when_port_80_goes_down.py &
