@@ -11,8 +11,9 @@
 #
 # By default this script does nothing.
 
-cd /home/ubuntu/; rethinkdb &
-cd /home/ubuntu/redactvideodotorg/; sudo python autodeploy.py > /home/ubuntu/app_log.txt 2>&1 &
-cd /home/ubuntu/redactvideodotorg/scripts/; sudo python email_when_port_80_goes_down.py &
-cd /home/ubuntu/redactvideodotorg/scripts/; sudo python auto_update.py &
+$BASE = replace_with_path
+cd $BASE; rethinkdb &
+cd $BASE/redactvideo/; sudo python autodeploy.py > redactvideo_logs/app_log.txt 2>&1 &
+cd $BASE/redactvideo/; sudo python email_when_port_80_goes_down.py &
+cd $BASE/redactvideo/; sudo python auto_update.py &
 exit 0

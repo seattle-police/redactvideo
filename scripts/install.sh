@@ -14,4 +14,7 @@ sudo cp redactvideo/binaries/dlib.so /usr/local/lib/python2.7/dist-packages/
 sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
 sudo apt-get -y install libopencv-dev python-opencv
 sudo pip install -r redactvideo/requirements.txt
+mkdir redactvideo_logs
 sudo cp redactvideo/scripts/rc.local /etc/rc.local
+BASE_PATH="$(pwd)"
+sudo perl -pi -e 's/replace_with_path/$(printf %q $BASE_PATH)/g' /etc/rc.local
