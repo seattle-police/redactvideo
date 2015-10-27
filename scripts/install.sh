@@ -1,5 +1,6 @@
 # curl https://raw.githubusercontent.com/seattle-police/redactvideo/master/scripts/install.sh | sudo bash
 sudo apt-get -y install git
+rm -rf redactvideo
 git clone https://github.com/seattle-police/redactvideo.git
 sudo apt-get -y install python-pip
 sudo apt-get -y install python-dev libxml2-dev libxslt-dev
@@ -17,4 +18,5 @@ sudo pip install -r redactvideo/requirements.txt
 mkdir redactvideo_logs
 sudo cp redactvideo/scripts/rc.local /etc/rc.local
 BASE_PATH="$(pwd)"
-sudo perl -pi -e 's/replace_with_path/$(printf %q $BASE_PATH)/g' /etc/rc.local
+BASE_PATH="$(printf %q $BASE_PATH)"
+sudo perl -pi -e 's/replace_with_path/"$BASE_PATH"/g' /etc/rc.local
