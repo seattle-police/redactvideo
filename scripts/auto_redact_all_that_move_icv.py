@@ -28,7 +28,7 @@ started_count = 0
 confirmed_stopped = False
 # loop over the frames of the video
 while True:
-    print i, confirmed_stopped
+    print i
     i += 1
     # grab the current frame and initialize the occupied/unoccupied
     # text
@@ -41,7 +41,7 @@ while True:
         break
 
     # resize the frame, convert it to grayscale, and blur it
-    #frame = imutils.resize(frame, width=500)
+    frame = imutils.resize(frame, width=frame.shape[1]/2)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (21, 21), 0)
     blurred = cv2.GaussianBlur(frame, (35, 35), 0)
@@ -76,10 +76,9 @@ while True:
         frame[x[:2]] = blurred[x[:2]]
     if areas:
         largest = sorted(areas, key=lambda x: x[0], reverse=True)[0]
-        print frame.shape
-        if not (largest[1] > frame.shape[1]-120 or largest[2] > frame.shape[0]-120):
+        if not (largest[1] > frame.shape[1]-30 and largest[2] > frame.shape[0]-30):
             stopped_count += 1
-            if stopped_count == 480:
+            if stopped_count == 60:
                 started_count = 0
                 confirmed_stopped = True
                 firstFrame = saved_gray
@@ -87,7 +86,7 @@ while True:
                 saved_gray = gray
         else:
             started_count += 1
-            if started_count == 480:
+            if started_count == 60:
                 print 'started', largest
                 stopped_count = 0
                 confirmed_stopped = False
@@ -98,7 +97,8 @@ while True:
         cv2.imwrite('%s/%s' % (frames_folder, filename), frame)
     else:
         cv2.imwrite('%s/%s' % (frames_folder, filename), blurred)
-ffmpeg_cmd = '%sffmpeg -i %s/%%08d.jpg -y -r 24 -vcodec libx264 -preset ultrafast -b:a 32k -strict -2 %s' % ('./', frames_folder, args["output"])
+ffmpeg_cmd = '%sffmpeg -i %s/%%08d.jpg -y -r 24 -vcodec libx264 -crf 22 -preset ultrafast -b:a 32k -strict -2 %s' % ('./', frames_folder, args["output"])
 print ffmpeg_cmd
 os.system(ffmpeg_cmd)
+os.system('rm -rf %s' % (frames_folder))
 camera.release()

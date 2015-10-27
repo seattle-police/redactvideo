@@ -11,9 +11,13 @@
 #
 # By default this script does nothing.
 
+# Update the Amazon EC2 AMI tools
+echo " + Updating EC2 AMI tools"
+yum update -y aws-amitools-ec2
+echo " + Updated EC2 AMI tools"
 BASE = replace_with_path
 cd $BASE; rethinkdb &
 cd $BASE/redactvideo/; sudo python autodeploy.py > redactvideo_logs/app_log.txt 2>&1 &
-cd $BASE/redactvideo/; sudo python email_when_port_80_goes_down.py &
-cd $BASE/redactvideo/; sudo python auto_update.py &
+cd $BASE/redactvideo/scripts; sudo python email_when_port_80_goes_down.py &
+cd $BASE/redactvideo/scripts; sudo python auto_update.py &
 exit 0

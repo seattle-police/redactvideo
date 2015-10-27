@@ -14,6 +14,9 @@ sudo pip install flask-socketio
 sudo cp redactvideo/binaries/dlib.so /usr/local/lib/python2.7/dist-packages/
 sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
 sudo apt-get -y install libopencv-dev python-opencv
+wget http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz 
+tar -xvf ffmpeg-git-64bit-static.tar.xz
+sudo cp  ffmpeg-git-*-64bit-static/ffmpeg /usr/bin/ffmpeg
 sudo pip install -r redactvideo/requirements.txt
 mkdir redactvideo_logs
 sudo cp redactvideo/scripts/rc.local /etc/rc.local
