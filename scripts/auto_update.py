@@ -1,6 +1,6 @@
 # cron is hard to set up programmatically so lets just run this file at boot
 # run git pull every five minutes 
-
+import time
 import os
 while True:
     os.system('cd ../; git stash save --keep-index')
