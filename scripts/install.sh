@@ -14,15 +14,14 @@ wget -qO- http://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
 sudo apt-get update
 sudo apt-get -y install rethinkdb
 sudo pip install rethinkdb
+rethinkdb &
+sleep 5 # give rethinkdb 5 seconds to start up
 echo 'Setup DB'
 python redactvideo/scripts/setup_rethinkdb.py
 echo 'Install Flask'
 sudo pip install flask-socketio
 echo 'Install Dlib'
 sudo cp redactvideo/binaries/dlib.so /usr/local/lib/python2.7/dist-packages/
-echo 'Install Various Python packages'
-sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
-sudo apt-get -y install libopencv-dev python-opencv
 echo 'Install FFMPEG'
 wget http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz 
 tar -xvf ffmpeg-git-64bit-static.tar.xz
@@ -36,3 +35,6 @@ sudo cp redactvideo/scripts/rc.local /etc/rc.local
 BASE_PATH=$(pwd | sed 's_/_\\/_g')
 echo "path", $BASE_PATH
 sudo perl -pi -e 's/replace_with_path/'$BASE_PATH'/g' /etc/rc.local
+echo 'Install Various Python packages'
+sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+sudo apt-get -y install libopencv-dev python-opencv
