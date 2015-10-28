@@ -33,7 +33,7 @@ import thread
 import boto3
 import random
 import string
-
+import time
 
 #url_for('static', filename='main.css')
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -64,14 +64,10 @@ def get_setting(setting):
 # Need to wait for RethinkDB to be running
 # in rc.local there's no wait between starting rethinkdb and
 # starting this script
-while True:
-    conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-    try:
-        s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
-        bucket = s3conn.get_bucket(get_setting('bucket_name'))
-        break
-    except:
-        pass
+time.sleep(10)
+conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
+s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
+bucket = s3conn.get_bucket(get_setting('bucket_name'))
 
 from upload import upload_to_youtube
 
