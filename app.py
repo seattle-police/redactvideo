@@ -1164,4 +1164,5 @@ def broadcast_everything():
     return render_template('broadcast_everything.html')
     
 if __name__ == '__main__':
+    print 'running'
     socketio.run(app, host='0.0.0.0', port=80)
