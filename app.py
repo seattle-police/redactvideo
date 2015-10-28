@@ -66,8 +66,11 @@ def get_setting(setting):
 # starting this script
 time.sleep(10)
 conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
-s3conn = S3Connection(get_setting('access_key_id'), get_setting('secret_access_key'))
-bucket = s3conn.get_bucket(get_setting('bucket_name'))
+s3conn = S3Connection()
+if get_setting('bucket_name'):
+    bucket = s3conn.get_bucket(get_setting('bucket_name'))
+else:
+    bucket = None
 
 from upload import upload_to_youtube
 
