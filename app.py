@@ -168,9 +168,9 @@ def get_md5(thestr):
     import hashlib
     m = hashlib.md5()
     m.update(thestr)
-    return m.hexdigest()    
+    return m.hexdigest()
     
-@app.route('/generate_thumbs_for_every_video/', methods=['GET'])         
+@app.route('/generate_thumbs_for_every_video/', methods=['GET'])
 def generate_thumbs_for_every_video():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     from utils.video import put_folder_on_s3
@@ -188,8 +188,8 @@ def generate_thumbs_for_every_video():
         put_folder_on_s3('/home/ubuntu/temp_videos/%s/' % (hash), hash, get_setting('bucket_name'), get_setting('access_key_id'), get_setting('secret_access_key'))
         os.system('rm -rf /home/ubuntu/temp_videos/%s/' % (hash))
     return Response('')
-    
-@app.route('/youtube_oauth_callback/', methods=['GET']) 
+
+@app.route('/youtube_oauth_callback/', methods=['GET'])
 def youtube_oauth_callback():
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
     code = request.args['code']
@@ -199,9 +199,7 @@ def youtube_oauth_callback():
     data = t.json()
     user_id = db.table('sessions').get(request.cookies.get('session')).run(conn)['userid']
     db.table('users').get(user_id).update({'youtube_token': data['access_token'], 'youtube_refresh_token': data['refresh_token']}).run(conn)
-
-    
-    return render_template("youtube_callback.html")        
+    return render_template("youtube_callback.html")
 
 def get_users_youtube_token(user_id):    
     conn = r.connect( "localhost", 28015).repl(); db = r.db('redactvideodotorg');
