@@ -16,8 +16,8 @@
 #sudo apt-get install -y aws-amitools-ec2
 #echo " + Updated EC2 AMI tools"
 BASE="replace_with_path"
-cd $BASE; rethinkdb > redactvideo_logs/rethinkdb_log.txt 2>&1 &
-cd $BASE/redactvideo/; sudo python autodeploy.py > redactvideo_logs/app_log.txt 2>&1 &
-cd $BASE/redactvideo/scripts; sudo python email_when_port_80_goes_down.py > redactvideo_logs/monitor_log.txt 2>&1 &
-cd $BASE/redactvideo/scripts; sudo python auto_update.py > redactvideo_logs/auto_update_log.txt 2>&1 &
+cd $BASE; rethinkdb > $BASE/redactvideo_logs/rethinkdb_log.txt 2>&1 &
+cd $BASE/redactvideo/; sudo python autodeploy.py > $BASE/redactvideo_logs/app_log.txt 2>&1 &
+cd $BASE/redactvideo/scripts; sudo python email_when_port_80_goes_down.py > $BASE/redactvideo_logs/monitor_log.txt 2>&1 &
+cd $BASE/redactvideo/scripts; sudo python auto_update.py > $BASE/redactvideo_logs/auto_update_log.txt 2>&1 &
 exit 0
