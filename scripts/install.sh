@@ -26,6 +26,7 @@ echo 'Install FFMPEG'
 wget http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz 
 tar -xvf ffmpeg-git-64bit-static.tar.xz
 sudo cp  ffmpeg-git-*-64bit-static/ffmpeg /usr/bin/ffmpeg
+rm -rf ./ffmpeg*
 echo 'Install pip requirements'
 sudo pip install -r redactvideo/requirements.txt
 echo 'Create logs folder'
