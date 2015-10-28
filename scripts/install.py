@@ -13,7 +13,7 @@ os.system('sudo apt-get -y install python-dev libxml2-dev libxslt-dev')
 print 'Install RethinkDB'
 os.system('. /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list')
 os.system('wget -qO- http://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -')
-os.system('sudo apt-get update')
+os.system('sudo apt-get clean;cd /var/lib/apt;sudo mv lists lists.old;sudo mkdir -p lists/partial;sudo apt-get clean;sudo apt-get update')
 os.system('sudo apt-get -y install rethinkdb')
 os.system('sudo pip install rethinkdb')
 os.system('rethinkdb &')
