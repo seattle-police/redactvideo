@@ -33,9 +33,11 @@ echo 'Create logs folder'
 mkdir redactvideo_logs
 echo 'Create rc.local'
 sudo cp redactvideo/scripts/rc.local /etc/rc.local
+cat /etc/rc.local
 BASE_PATH=$(pwd | sed 's_/_\\/_g')
 echo "path", $BASE_PATH
 sudo perl -pi -e 's/replace_with_path/'$BASE_PATH'/g' /etc/rc.local
+cat /etc/rc.local
 echo 'Install Various Python packages'
 sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
 sudo apt-get -y install libopencv-dev python-opencv
