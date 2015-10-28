@@ -13,7 +13,7 @@
 
 # Update the Amazon EC2 AMI tools
 echo " + Updating EC2 AMI tools"
-yum update -y aws-amitools-ec2
+sudo apt-get install -y aws-amitools-ec2
 echo " + Updated EC2 AMI tools"
 BASE = replace_with_path
 cd $BASE; rethinkdb &
