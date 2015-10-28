@@ -25,6 +25,7 @@ print 'Install Flask'
 os.system('sudo pip install flask-socketio')
 print 'Install Dlib'
 os.system('sudo apt-get -y install libboost-python-dev cmake')
+os.system('cd /usr/lib/x86_64-linux-gnu; sudo ln -s libboost_python-py27.so.1.55.0 libboost_python.so.1.55.0')
 os.system('sudo cp redactvideo/binaries/dlib.so /usr/local/lib/python2.7/dist-packages/')
 print 'Install FFMPEG'
 os.system('wget http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz')
