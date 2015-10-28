@@ -37,7 +37,7 @@ print 'Create rc.local'
 os.system('sudo cp redactvideo/scripts/rc.local /etc/rc.local')
 os.system('cat /etc/rc.local')
 
-os.system("sudo perl -pi -e 's/replace_with_path/'$(pwd | sed 's_/_\\/_g')'/g' /etc/rc.local")
+os.system("sudo perl -pi -e 's/replace_with_path/'$(pwd | sed 's_/_\\\\/_g')'/g' /etc/rc.local")
 os.system('cat /etc/rc.local')
 print 'Install Various Python packages'
 os.system('sudo apt-get -y install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose')
